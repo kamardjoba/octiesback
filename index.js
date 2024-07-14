@@ -135,8 +135,6 @@ app.get('/get-user-data', async (req, res) => {
   }
 });
 
-
-
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
