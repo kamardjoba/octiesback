@@ -136,7 +136,7 @@ mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTop
     .catch(err => console.log(err));
 
 const knownIds = [
-  { id: 3226119, date: new Date('2013-11-29') },
+    { id: 3226119, date: new Date('2013-11-29') },
     { id: 10000000, date: new Date('2014-01-01') },
     { id: 22616448, date: new Date('2014-02-25') },
     { id: 48233544, date: new Date('2014-06-16') },
