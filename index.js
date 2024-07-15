@@ -372,7 +372,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://6695863873c6e70008bcd64c--stately-moxie-d3b26c.netlify.app/?userId=${userId}`;
+    const appUrl = `https://6695872f03a6d40008173b1f--nimble-flan-b57c97.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
