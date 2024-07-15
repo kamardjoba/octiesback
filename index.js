@@ -148,15 +148,7 @@ function calculateCoins(accountCreationDate, hasTelegramPremium) {
   return baseCoins + premiumBonus;
 }
 
-async function checkTelegramPremium(userId) {
-  try {
-    const user = await bot.getChatMember(userId, userId);
-    return user.status === 'member' && user.is_premium;
-  } catch (error) {
-    console.error('Ошибка при проверке Telegram Premium:', error);
-    return false; // Предположим, что у пользователя нет премиум, если произошла ошибка
-  }
-}
+
 
 
 async function checkChannelSubscription(telegramId) {
@@ -213,6 +205,18 @@ function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
   return baseCoins + premiumBonus + subscriptionBonus;
 }
 
+
+
+async function checkTelegramPremium(userId) {
+  try {
+    const user = await bot.getChatMember(userId, userId);
+    return user.status === 'member' && user.is_premium;
+  } catch (error) {
+    console.error('Ошибка при проверке Telegram Premium:', error);
+    return false; // Предположим, что у пользователя нет премиум, если произошла ошибка
+  }
+}
+
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
   const accountCreationDate = estimateAccountCreationDate(userId);
@@ -220,7 +224,13 @@ app.post('/get-coins', async (req, res) => {
   try {
     const hasTelegramPremium = await checkTelegramPremium(userId);
     const isSubscribed = await checkChannelSubscription(userId);
-    const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+
+    let premiumBonus = 0;
+    if (hasTelegramPremium) {
+      premiumBonus = 300; // Award 300 coins for Telegram Premium
+    }
+
+    const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) + premiumBonus;
 
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
@@ -244,7 +254,6 @@ app.post('/get-coins', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-
 
 
 
@@ -287,7 +296,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://669505912e0c7e00080cb30e--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://669508ae6c7d8800082f0402--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
