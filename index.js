@@ -248,23 +248,6 @@ app.get('/leaderboard', async (req, res) => {
   }
 });
 
-app.get('/user-rank', async (req, res) => {
-  const { userId } = req.query;
-  try {
-    const user = await UserProgress.findOne({ telegramId: userId });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
-    }
-
-    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins } }) + 1;
-    res.json({ success: true, rank });
-  } catch (error) {
-    console.error('Ошибка при получении позиции пользователя:', error);
-    res.status(500).json({ success: false, message: 'Ошибка сервера' });
-  }
-});
-
-
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
 
@@ -340,6 +323,24 @@ updateUsersWithFirstNames().then(() => {
   console.error('Ошибка при обновлении пользователей:', err);
 });
 
+app.get('/user-rank', async (req, res) => {
+  const { userId } = req.query;
+  console.log(`Received request for user rank: ${userId}`); // Логирование userId
+  try {
+    const user = await UserProgress.findOne({ telegramId: userId });
+    if (!user) {
+      console.log('User not found');
+      return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+    }
+
+    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins } }) + 1;
+    console.log(`User rank is: ${rank}`);
+    res.json({ success: true, rank });
+  } catch (error) {
+    console.error('Ошибка при получении позиции пользователя:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+});
 
 
 app.get('/get-user-data', async (req, res) => {
