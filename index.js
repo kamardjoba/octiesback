@@ -106,25 +106,28 @@ async function checkTelegramPremium(userId) {
 
 async function checkChannelSubscription(telegramId) {
   try {
-      const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
-          params: {
-              chat_id: CHANNEL_ID,
-              user_id: telegramId
-          }
-      });
+    const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+      params: {
+        chat_id: CHANNEL_ID,
+        user_id: telegramId
+      }
+    });
 
-      console.log('Telegram API Response:', response.data); // Добавьте этот лог
+    console.log('Telegram API Response:', response.data);
 
+    if (response.data.ok) {
       const status = response.data.result.status;
+      console.log(`User ${telegramId} status in channel:`, status);
       return ['member', 'administrator', 'creator'].includes(status);
-  } catch (error) {
-      console.error('Ошибка при проверке подписки на канал:', error);
+    } else {
+      console.error('Ошибка в ответе API Telegram:', response.data);
       return false;
+    }
+  } catch (error) {
+    console.error('Ошибка при проверке подписки на канал:', error);
+    return false;
   }
-
-  
 }
-
 
 function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
   const currentYear = new Date().getFullYear();
@@ -139,11 +142,12 @@ function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
   const accountCreationDate = estimateAccountCreationDate(userId);
-  const hasTelegramPremium = await checkTelegramPremium(userId);
-  const isSubscribed = await checkChannelSubscription(userId);
-  const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
 
   try {
+    const hasTelegramPremium = await checkTelegramPremium(userId);
+    const isSubscribed = await checkChannelSubscription(userId);
+    const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
       user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
@@ -154,12 +158,20 @@ app.post('/get-coins', async (req, res) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
+
+    console.log(`User data for ${userId}:`, {
+      coins: user.coins,
+      hasTelegramPremium: user.hasTelegramPremium,
+      hasCheckedSubscription: user.hasCheckedSubscription
+    });
+
     res.json({ coins: user.coins, hasTelegramPremium: user.hasTelegramPremium, hasCheckedSubscription: user.hasCheckedSubscription });
   } catch (error) {
     console.error('Ошибка при сохранении пользователя:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 app.get('/get-user-data', async (req, res) => {
   const { userId } = req.query;
