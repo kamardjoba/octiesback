@@ -179,18 +179,18 @@ app.post('/get-coins', async (req, res) => {
       await user.save();
     }
 
-    console.log(`User data for ${userId}:`, {
+    res.json({
       coins: user.coins,
       hasTelegramPremium: user.hasTelegramPremium,
-      hasCheckedSubscription: user.hasCheckedSubscription
+      hasCheckedSubscription: user.hasCheckedSubscription,
+      accountCreationDate: accountCreationDate.toISOString() // добавляем дату создания аккаунта
     });
-
-    res.json({ coins: user.coins, hasTelegramPremium: user.hasTelegramPremium, hasCheckedSubscription: user.hasCheckedSubscription });
   } catch (error) {
     console.error('Ошибка при сохранении пользователя:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 
 app.get('/get-user-data', async (req, res) => {
@@ -229,7 +229,7 @@ bot.onText(/\/start/, async (msg) => {
       user.coins = coins;
       await user.save();
     }
-    const appUrl = `https://66948cd9fff7c500080a1bd1--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://66949313a3d5a00008381384--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
