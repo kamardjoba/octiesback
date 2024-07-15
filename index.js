@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
 const UserProgress = require('./models/userProgress');
+const axios = require('axios');
 
 const app = express();
 const port = process.env.PORT || 3001;
