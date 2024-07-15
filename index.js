@@ -9,7 +9,7 @@ const UserProgress = require('./models/userProgress');
 
 const app = express();
 const port = process.env.PORT || 3001;
-const token = process.env.TOKEN;
+const token = "7291251876:AAH7r2F6kln8t6H-owdLUjs07AWErPKDufQ";
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const CHANNEL_ID = -1002202574694; 
@@ -197,7 +197,7 @@ bot.onText(/\/start/, async (msg) => {
       user.coins = coins;
       await user.save();
     }
-    const appUrl = `https://66947d5e777f7b00082126d5--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://66947f5f0a34f0000802e097--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
