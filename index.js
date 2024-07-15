@@ -12,6 +12,7 @@ const port = process.env.PORT || 3001;
 const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
+const appUrl = `https://66946ed53f33d10007b620c9--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -152,7 +153,6 @@ bot.onText(/\/start/, async (msg) => {
       user.coins = coins;
       await user.save();
     }
-    const appUrl = `https://6694626989116200080a3bcf--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
