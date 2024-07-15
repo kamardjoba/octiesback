@@ -205,16 +205,27 @@ async function checkTelegramPremium(userId) {
 }
 
 app.post('/add-referral', async (req, res) => {
-  const { referrerId, referredNickname, referredCoins } = req.body;
+  const { referrerCode, referredId } = req.body;
 
   try {
-    const referrer = await UserProgress.findOne({ telegramId: referrerId });
+    const referrer = await UserProgress.findOne({ referralCode: referrerCode });
     if (!referrer) {
       return res.status(404).json({ success: false, message: 'Пригласивший пользователь не найден.' });
     }
 
-    referrer.referredUsers.push({ nickname: referredNickname, earnedCoins: referredCoins });
-    referrer.coins += referredCoins;
+    // Проверяем, существует ли уже реферал
+    const referredUser = await UserProgress.findOne({ telegramId: referredId });
+    if (referredUser) {
+      return res.status(400).json({ success: false, message: 'Пользователь уже зарегистрирован.' });
+    }
+
+    // Создаем нового пользователя с начальными монетами
+    const newUser = new UserProgress({ telegramId: referredId, coins: 500 });
+    await newUser.save();
+
+    // Добавляем информацию о реферале пригласившему пользователю
+    referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: 500 });
+    referrer.coins += 500;
     await referrer.save();
 
     res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
@@ -223,6 +234,7 @@ app.post('/add-referral', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
   }
 });
+
 
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
