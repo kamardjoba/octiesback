@@ -12,7 +12,7 @@ const UserSchema = new mongoose.Schema({
   referredUsers: [{ nickname: String, earnedCoins: Number }]
 });
 
-const UserProgress = mongoose.model('Users3', UserSchema);
+const UserProgress = mongoose.model('Users4', UserSchema);
 
 module.exports = UserProgress;
 

@@ -19,8 +19,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 
-
-
 mongoose.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB подключен'))
     .catch(err => console.log(err));
@@ -287,39 +285,42 @@ app.post('/get-referred-users', async (req, res) => {
 
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
-  const nickname = req.body.nickname || `user_${userId}`;
-  const firstName = req.body.firstName || 'Anonymous'; // Убедитесь, что firstName передается
   const accountCreationDate = estimateAccountCreationDate(userId);
 
   try {
-      const hasTelegramPremium = await checkTelegramPremium(userId);
-      const isSubscribed = await checkChannelSubscription(userId);
+    const hasTelegramPremium = await checkTelegramPremium(userId);
+    const isSubscribed = await checkChannelSubscription(userId);
 
-      let user = await UserProgress.findOne({ telegramId: userId });
-      if (!user) {
-          const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
-          user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
-          await user.save();
-      } else {
-          user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
-          user.nickname = nickname;
-          user.firstName = firstName; // Обновляем имя
-          user.hasTelegramPremium = hasTelegramPremium;
-          user.hasCheckedSubscription = isSubscribed;
-          await user.save();
-      }
+    const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
+    const firstName = chatMember.user.first_name || 'Anonymous'; // Используем first_name или задаем "Anonymous"
+    const nickname = chatMember.user.username || `user_${userId}`; // Используем username или генерируем никнейм
 
-      res.json({
-          coins: user.coins,
-          hasTelegramPremium: user.hasTelegramPremium,
-          hasCheckedSubscription: user.hasCheckedSubscription,
-          accountCreationDate: accountCreationDate.toISOString()
-      });
+    let user = await UserProgress.findOne({ telegramId: userId });
+    if (!user) {
+      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
+      await user.save();
+    } else {
+      user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+      user.nickname = nickname;
+      user.firstName = firstName; // Обновляем имя
+      user.hasTelegramPremium = hasTelegramPremium;
+      user.hasCheckedSubscription = isSubscribed;
+      await user.save();
+    }
+
+    res.json({
+      coins: user.coins,
+      hasTelegramPremium: user.hasTelegramPremium,
+      hasCheckedSubscription: user.hasCheckedSubscription,
+      accountCreationDate: accountCreationDate.toISOString()
+    });
   } catch (error) {
-      console.error('Ошибка при сохранении пользователя:', error);
-      res.status(500).json({ error: 'Ошибка сервера' });
+    console.error('Ошибка при сохранении пользователя:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 async function updateUsersWithFirstNames() {
   const users = await UserProgress.find({ firstName: { $exists: false } });
@@ -330,6 +331,8 @@ async function updateUsersWithFirstNames() {
     await user.save();
   }
 }
+
+
 
 updateUsersWithFirstNames().then(() => {
   console.log('Все пользователи обновлены');
@@ -382,7 +385,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://669524132d2f0900085a87ca--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://6695103b59bfba0008e07870--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
@@ -395,6 +398,7 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 
 
