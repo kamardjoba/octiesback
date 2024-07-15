@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001;
 const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
-
+const CHANNEL_ID = -1002202574694; 
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -104,23 +104,52 @@ async function checkTelegramPremium(userId) {
   }
 }
 
+async function checkChannelSubscription(telegramId) {
+  try {
+    const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+      params: {
+        chat_id: CHANNEL_ID,
+        user_id: telegramId
+      }
+    });
+
+    const status = response.data.result.status;
+    return ['member', 'administrator', 'creator'].includes(status);
+  } catch (error) {
+    console.error('Ошибка при проверке подписки на канал:', error);
+    return false;
+  }
+}
+
+function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
+  const currentYear = new Date().getFullYear();
+  const accountYear = accountCreationDate.getFullYear();
+  const yearsOld = currentYear - accountYear;
+  const baseCoins = yearsOld * 500;
+  const premiumBonus = hasTelegramPremium ? 500 : 0;
+  const subscriptionBonus = isSubscribed ? 1000 : 0;
+  return baseCoins + premiumBonus + subscriptionBonus;
+}
+
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
   const accountCreationDate = estimateAccountCreationDate(userId);
   const hasTelegramPremium = await checkTelegramPremium(userId);
-  const coins = calculateCoins(accountCreationDate, hasTelegramPremium);
+  const isSubscribed = await checkChannelSubscription(userId);
+  const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
 
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-      user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium });
+      user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
       user.coins = coins;
       user.hasTelegramPremium = hasTelegramPremium;
+      user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    res.json({ coins: user.coins, hasTelegramPremium: user.hasTelegramPremium });
+    res.json({ coins: user.coins, hasTelegramPremium: user.hasTelegramPremium, hasCheckedSubscription: user.hasCheckedSubscription });
   } catch (error) {
     console.error('Ошибка при сохранении пользователя:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
@@ -138,7 +167,8 @@ app.get('/get-user-data', async (req, res) => {
     res.json({
       coins: user.coins,
       telegramId: user.telegramId,
-      hasTelegramPremium: user.hasTelegramPremium
+      hasTelegramPremium: user.hasTelegramPremium,
+      hasCheckedSubscription: user.hasCheckedSubscription
     });
   } catch (error) {
     console.error('Ошибка при получении данных пользователя:', error);
@@ -162,7 +192,7 @@ bot.onText(/\/start/, async (msg) => {
       user.coins = coins;
       await user.save();
     }
-    const appUrl = `https://669476172f83d30008815f14--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://66947d5e777f7b00082126d5--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
