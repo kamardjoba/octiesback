@@ -10,7 +10,7 @@ const axios = require('axios');
 
 const app = express();
 const port = process.env.PORT || 3001;
-const token = "7291251876:AAH7r2F6kln8t6H-owdLUjs07AWErPKDufQ";
+const token = "7180327016:AAEZErJk-k0CXM9xw2ix_kxDqKto1iXlziw";
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const CHANNEL_ID = -1002202574694; 
@@ -75,7 +75,7 @@ function generateReferralCode() {
 
 // Генерация Telegram ссылки с реферальным кодом
 function generateTelegramLink(referralCode) {
-  return `https://t.me/Octies_time_bot?start=${referralCode}`;
+  return `https://t.me/OCTIESS_BOT?start=${referralCode}`;
 }
 
 app.post('/add-referral', async (req, res) => {
@@ -422,7 +422,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://6695557595fba500087cddee--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://6695601741e4190008db1684--fascinating-taiyaki-2c0745.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
