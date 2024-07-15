@@ -235,6 +235,37 @@ app.post('/add-referral', async (req, res) => {
   }
 });
 
+app.get('/leaderboard', async (req, res) => {
+  try {
+    const leaderboard = await UserProgress.find({})
+      .sort({ coins: -1 })
+      .limit(50)
+      .select('telegramId coins')
+      .lean();
+
+    res.json({ success: true, leaderboard });
+  } catch (error) {
+    console.error('Ошибка при получении данных лидерборда:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+});
+
+app.get('/user-rank', async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const user = await UserProgress.findOne({ telegramId: userId });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+    }
+
+    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins } }) + 1;
+    res.json({ success: true, rank });
+  } catch (error) {
+    console.error('Ошибка при получении позиции пользователя:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+});
+
 
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
@@ -325,7 +356,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://6695103b59bfba0008e07870--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://66951c6e7926eb000954acc0--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
