@@ -242,36 +242,30 @@ app.post('/get-coins', async (req, res) => {
   const accountCreationDate = estimateAccountCreationDate(userId);
 
   try {
-    const hasTelegramPremium = await checkTelegramPremium(userId);
-    const isSubscribed = await checkChannelSubscription(userId);
+      const hasTelegramPremium = await checkTelegramPremium(userId);
+      const isSubscribed = await checkChannelSubscription(userId);
 
-    let premiumBonus = 0;
-    if (hasTelegramPremium) {
-      premiumBonus = 300; // Award 300 coins for Telegram Premium
-    }
+      let user = await UserProgress.findOne({ telegramId: userId });
+      if (!user) {
+          const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+          user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
+          await user.save();
+      } else {
+          user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+          user.hasTelegramPremium = hasTelegramPremium;
+          user.hasCheckedSubscription = isSubscribed;
+          await user.save();
+      }
 
-    const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) + premiumBonus;
-
-    let user = await UserProgress.findOne({ telegramId: userId });
-    if (!user) {
-      user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
-      await user.save();
-    } else {
-      user.coins = coins;
-      user.hasTelegramPremium = hasTelegramPremium;
-      user.hasCheckedSubscription = isSubscribed;
-      await user.save();
-    }
-
-    res.json({
-      coins: user.coins,
-      hasTelegramPremium: user.hasTelegramPremium,
-      hasCheckedSubscription: user.hasCheckedSubscription,
-      accountCreationDate: accountCreationDate.toISOString() // добавляем дату создания аккаунта
-    });
+      res.json({
+          coins: user.coins,
+          hasTelegramPremium: user.hasTelegramPremium,
+          hasCheckedSubscription: user.hasCheckedSubscription,
+          accountCreationDate: accountCreationDate.toISOString()
+      });
   } catch (error) {
-    console.error('Ошибка при сохранении пользователя:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+      console.error('Ошибка при сохранении пользователя:', error);
+      res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
 
