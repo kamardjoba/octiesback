@@ -111,6 +111,32 @@ app.post('/add-referral', async (req, res) => {
 
 
 
+app.post('/generate-referral', async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const user = await UserProgress.findOne({ telegramId: userId });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+    }
+
+    // Если у пользователя уже есть реферальный код, используем его
+    let referralCode = user.referralCode;
+    if (!referralCode) {
+      referralCode = generateReferralCode();
+      user.referralCode = referralCode;
+      await user.save();
+    }
+
+    const telegramLink = generateTelegramLink(referralCode);
+
+    res.json({ success: true, referralCode, telegramLink });
+  } catch (error) {
+    console.error('Ошибка при генерации реферальной ссылки:', error);
+    res.status(500).json({ success: false, message: 'Ошибка при генерации реферальной ссылки.' });
+  }
+});
+
 
 function estimateAccountCreationDate(userId) {
   for (let i = 0; i < knownIds.length - 1; i++) {
@@ -394,7 +420,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://66954a1d8b38de0008e4886b--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://66954cc6f9372f0008710762--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
