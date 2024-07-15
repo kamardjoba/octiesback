@@ -107,13 +107,14 @@ app.post('/get-coins', async (req, res) => {
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-      user = new UserProgress({ telegramId: userId, coins });
+      user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium });
       await user.save();
     } else {
       user.coins = coins;
+      user.hasTelegramPremium = hasTelegramPremium;
       await user.save();
     }
-    res.json({ coins: user.coins });
+    res.json({ coins: user.coins, hasTelegramPremium: user.hasTelegramPremium });
   } catch (error) {
     console.error('Ошибка при сохранении пользователя:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
@@ -130,7 +131,8 @@ app.get('/get-user-data', async (req, res) => {
     }
     res.json({
       coins: user.coins,
-      telegramId: user.telegramId
+      telegramId: user.telegramId,
+      hasTelegramPremium: user.hasTelegramPremium
     });
   } catch (error) {
     console.error('Ошибка при получении данных пользователя:', error);
@@ -154,7 +156,7 @@ bot.onText(/\/start/, async (msg) => {
       user.coins = coins;
       await user.save();
     }
-    const appUrl = `https://66946ed53f33d10007b620c9--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://669476172f83d30008815f14--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
