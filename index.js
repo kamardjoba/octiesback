@@ -78,29 +78,34 @@ function generateTelegramLink(referralCode) {
   return `https://t.me/Octies_time_bot?start=${referralCode}`;
 }
 
-app.post('/generate-referral', async (req, res) => {
-  const { userId } = req.body;
+app.post('/add-referral', async (req, res) => {
+  const { referrerCode, referredId } = req.body;
 
   try {
-    const user = await UserProgress.findOne({ telegramId: userId });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+    const referrer = await UserProgress.findOne({ referralCode: referrerCode });
+    if (!referrer) {
+      return res.status(404).json({ success: false, message: 'Пригласивший пользователь не найден.' });
     }
 
-    // Если у пользователя уже есть реферальный код, используем его
-    let referralCode = user.referralCode;
-    if (!referralCode) {
-      referralCode = generateReferralCode();
-      user.referralCode = referralCode;
-      await user.save();
+    // Проверяем, существует ли уже реферал
+    const referredUser = await UserProgress.findOne({ telegramId: referredId });
+    if (referredUser) {
+      return res.status(400).json({ success: false, message: 'Пользователь уже зарегистрирован.' });
     }
 
-    const telegramLink = generateTelegramLink(referralCode);
+    // Создаем нового пользователя с начальными монетами
+    const newUser = new UserProgress({ telegramId: referredId, coins: 500 });
+    await newUser.save();
 
-    res.json({ success: true, referralCode, telegramLink });
+    // Добавляем информацию о реферале пригласившему пользователю
+    referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: 500 });
+    referrer.coins += 500;
+    await referrer.save();
+
+    res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
   } catch (error) {
-    console.error('Ошибка при генерации реферальной ссылки:', error);
-    res.status(500).json({ success: false, message: 'Ошибка при генерации реферальной ссылки.' });
+    console.error('Ошибка при добавлении реферала:', error);
+    res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
   }
 });
 
@@ -234,7 +239,6 @@ app.post('/add-referral', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
   }
 });
-
 
 app.get('/leaderboard', async (req, res) => {
   try {
