@@ -113,14 +113,10 @@ async function checkChannelSubscription(telegramId) {
       }
     });
 
-    console.log('Telegram API Response:', response.data);
-
     if (response.data.ok) {
       const status = response.data.result.status;
-      console.log(`User ${telegramId} status in channel:`, status);
       return ['member', 'administrator', 'creator'].includes(status);
     } else {
-      console.error('Ошибка в ответе API Telegram:', response.data);
       return false;
     }
   } catch (error) {
@@ -128,6 +124,29 @@ async function checkChannelSubscription(telegramId) {
     return false;
   }
 }
+
+app.post('/check-subscription', async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const isSubscribed = await checkChannelSubscription(userId);
+    if (isSubscribed) {
+      let user = await UserProgress.findOne({ telegramId: userId });
+      if (user) {
+        user.hasCheckedSubscription = true;
+        user.coins += 1000;  // Добавляем награду за подписку
+        await user.save();
+      } else {
+        user = new UserProgress({ telegramId: userId, coins: 1000, hasCheckedSubscription: true });
+        await user.save();
+      }
+    }
+    res.json({ isSubscribed });
+  } catch (error) {
+    console.error('Ошибка при проверке подписки:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
 
 function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
   const currentYear = new Date().getFullYear();
@@ -209,7 +228,7 @@ bot.onText(/\/start/, async (msg) => {
       user.coins = coins;
       await user.save();
     }
-    const appUrl = `https://66948618b83fef000895cc96--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://66948a6f405fd60008b97765--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
