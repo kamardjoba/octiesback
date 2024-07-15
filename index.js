@@ -323,6 +323,7 @@ updateUsersWithFirstNames().then(() => {
   console.error('Ошибка при обновлении пользователей:', err);
 });
 
+
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
   console.log(`Received request for user rank: ${userId}`); // Логирование userId
@@ -386,7 +387,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://66952a4dbb61e90008399672--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://6695318cd2a89000082e0b0b--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
