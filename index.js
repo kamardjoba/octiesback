@@ -209,7 +209,7 @@ bot.onText(/\/start/, async (msg) => {
       user.coins = coins;
       await user.save();
     }
-    const appUrl = `https://66947f5f0a34f0000802e097--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://66948618b83fef000895cc96--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
