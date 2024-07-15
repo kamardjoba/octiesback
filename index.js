@@ -314,22 +314,20 @@ app.post('/get-coins', async (req, res) => {
 
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
-  console.log(`Received request for user rank: ${userId}`); // Логирование userId
   try {
     const user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-      console.log('User not found');
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
 
     const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins } }) + 1;
-    console.log(`User rank is: ${rank}`);
-    res.json({ success: true, rank });
+    res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
     console.error('Ошибка при получении позиции пользователя:', error);
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
+
 
 app.get('/get-user-data', async (req, res) => {
   const { userId } = req.query;
@@ -374,7 +372,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://669583f1282c510008b73b4b--fascinating-taiyaki-2c0745.netlify.app/?userId=${userId}`;
+    const appUrl = `https://6695863873c6e70008bcd64c--stately-moxie-d3b26c.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
