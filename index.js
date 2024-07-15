@@ -70,6 +70,40 @@ const knownIds = [
 
 ];
 
+// Генерация реферального кода
+function generateReferralCode() {
+  return Math.random().toString(36).substr(2, 9);
+}
+
+// Генерация Telegram ссылки с реферальным кодом
+function generateTelegramLink(referralCode) {
+  return `https://t.me/Octies_time_bot?start=${referralCode}`;
+}
+
+// API для генерации и получения реферального кода и ссылки
+app.post('/generate-referral', async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const user = await UserProgress.findOne({ telegramId: userId });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+    }
+
+    const referralCode = generateReferralCode();
+    const telegramLink = generateTelegramLink(referralCode);
+
+    user.referralCode = referralCode;
+    await user.save();
+
+    res.json({ success: true, referralCode, telegramLink });
+  } catch (error) {
+    console.error('Ошибка при генерации реферальной ссылки:', error);
+    res.status(500).json({ success: false, message: 'Ошибка при генерации реферальной ссылки.' });
+  }
+});
+
+
 function estimateAccountCreationDate(userId) {
   for (let i = 0; i < knownIds.length - 1; i++) {
         if (userId < knownIds[i + 1].id) {
@@ -234,7 +268,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://66949313a3d5a00008381384--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://6694fd55d98df3000941490e--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
