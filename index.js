@@ -105,6 +105,7 @@ async function checkTelegramPremium(userId) {
   }
 }
 
+
 async function checkChannelSubscription(telegramId) {
   try {
     const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
@@ -190,6 +191,7 @@ app.post('/get-coins', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 
 
