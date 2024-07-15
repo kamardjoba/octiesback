@@ -106,20 +106,25 @@ async function checkTelegramPremium(userId) {
 
 async function checkChannelSubscription(telegramId) {
   try {
-    const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
-      params: {
-        chat_id: CHANNEL_ID,
-        user_id: telegramId
-      }
-    });
+      const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+          params: {
+              chat_id: CHANNEL_ID,
+              user_id: telegramId
+          }
+      });
 
-    const status = response.data.result.status;
-    return ['member', 'administrator', 'creator'].includes(status);
+      console.log('Telegram API Response:', response.data); // Добавьте этот лог
+
+      const status = response.data.result.status;
+      return ['member', 'administrator', 'creator'].includes(status);
   } catch (error) {
-    console.error('Ошибка при проверке подписки на канал:', error);
-    return false;
+      console.error('Ошибка при проверке подписки на канал:', error);
+      return false;
   }
+
+  
 }
+
 
 function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
   const currentYear = new Date().getFullYear();
