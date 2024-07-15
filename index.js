@@ -347,7 +347,7 @@ bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
   const nickname = msg.from.username || `user_${userId}`;
-  const firstName = msg.from.first_name || 'Anonymous'; // Используем first_name или задаем "Anonymous"
+  const firstName = msg.from.first_name || `user${userId}`;
   const accountCreationDate = estimateAccountCreationDate(userId);
   const hasTelegramPremium = await checkTelegramPremium(userId);
   const isSubscribed = await checkChannelSubscription(userId);
@@ -356,7 +356,13 @@ bot.onText(/\/start/, async (msg) => {
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
+      user = new UserProgress({ 
+        telegramId: userId,
+         nickname,
+         first_name: firstName,
+         coins,
+          hasTelegramPremium, 
+          asCheckedSubscription: isSubscribed });
       await user.save();
     } else {
       user.coins = coins;
