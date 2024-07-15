@@ -90,12 +90,18 @@ function calculateCoins(accountCreationDate, hasTelegramPremium) {
   const accountYear = accountCreationDate.getFullYear();
   const yearsOld = currentYear - accountYear;
   const baseCoins = yearsOld * 500;
-  return hasTelegramPremium ? baseCoins * 1.5 : baseCoins;
+  const premiumBonus = hasTelegramPremium ? 500 : 0;
+  return baseCoins + premiumBonus;
 }
 
 async function checkTelegramPremium(userId) {
-  // Логика для проверки наличия Telegram Premium у пользователя.
-  return false;
+  try {
+    const user = await bot.getChatMember(userId, userId);
+    return user.status === 'member' && user.is_premium;
+  } catch (error) {
+    console.error('Ошибка при проверке Telegram Premium:', error);
+    return false; // Предположим, что у пользователя нет премиум, если произошла ошибка
+  }
 }
 
 app.post('/get-coins', async (req, res) => {
