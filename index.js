@@ -19,6 +19,7 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 
+
 mongoose.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB подключен'))
     .catch(err => console.log(err));
