@@ -377,6 +377,7 @@ app.get('/user-rank', async (req, res) => {
 });
 
 
+
 app.get('/get-user-data', async (req, res) => {
   const { userId } = req.query;
 
@@ -420,7 +421,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://66954cc6f9372f0008710762--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://6695527140d87600098b41cd--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
