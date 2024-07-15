@@ -1,4 +1,3 @@
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -72,31 +71,21 @@ const generateReferralCode = () => Math.random().toString(36).substr(2, 9);
 
 const generateTelegramLink = (referralCode) => `https://t.me/OCTIESS_BOT?start=${referralCode}`;
 
-app.post('/generate-referral', async (req, res) => {
-  const { userId } = req.body;
-
-  try {
-    const user = await UserProgress.findOne({ telegramId: userId });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
-    }
-
-    let referralCode = user.referralCode;
-    if (!referralCode) {
-      referralCode = generateReferralCode();
-      user.referralCode = referralCode;
-      await user.save();
-    }
-
-    const telegramLink = generateTelegramLink(referralCode);
-
-    res.json({ success: true, referralCode, telegramLink });
-  } catch (error) {
-    console.error('Ошибка при генерации реферального кода:', error);
-    res.status(500).json({ success: false, message: 'Ошибка при генерации реферального кода.' });
-  }
+updateUsersWithFirstNames().then(() => {
+  console.log('Все пользователи обновлены');
+}).catch(err => {
+  console.error('Ошибка при обновлении пользователей:', err);
 });
 
+async function updateUsersWithFirstNames() {
+  const users = await UserProgress.find({ firstName: { $exists: false } });
+  for (let user of users) {
+    const chatMember = await bot.getChatMember(CHANNEL_ID, user.telegramId);
+    const firstName = chatMember.user.first_name || 'Anonymous';
+    user.firstName = firstName;
+    await user.save();
+  }
+}
 
 function estimateAccountCreationDate(userId) {
   for (let i = 0; i < knownIds.length - 1; i++) {
@@ -123,9 +112,6 @@ function calculateCoins(accountCreationDate, hasTelegramPremium) {
   return baseCoins + premiumBonus;
 }
 
-
-
-
 async function checkChannelSubscription(telegramId) {
   try {
     const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
@@ -146,6 +132,52 @@ async function checkChannelSubscription(telegramId) {
     return false;
   }
 }
+
+function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
+  const currentYear = new Date().getFullYear();
+  const accountYear = accountCreationDate.getFullYear();
+  const yearsOld = currentYear - accountYear;
+  const baseCoins = yearsOld * 500;
+  const premiumBonus = hasTelegramPremium ? 500 : 0;
+  const subscriptionBonus = isSubscribed ? 1000 : 0;
+  return baseCoins + premiumBonus + subscriptionBonus;
+}
+
+async function checkTelegramPremium(userId) {
+  try {
+    const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
+    console.log('chatMember:', chatMember); // Логируем результат
+    return chatMember.user.is_premium;
+  } catch (error) {
+    console.error('Ошибка при проверке Telegram Premium:', error);
+    return false; // Предположим, что у пользователя нет премиум, если произошла ошибка
+  }
+}
+
+app.post('/generate-referral', async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const user = await UserProgress.findOne({ telegramId: userId });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+    }
+
+    let referralCode = user.referralCode;
+    if (!referralCode) {
+      referralCode = generateReferralCode();
+      user.referralCode = referralCode;
+      await user.save();
+    }
+
+    const telegramLink = generateTelegramLink(referralCode);
+
+    res.json({ success: true, referralCode, telegramLink });
+  } catch (error) {
+    console.error('Ошибка при генерации реферального кода:', error);
+    res.status(500).json({ success: false, message: 'Ошибка при генерации реферального кода.' });
+  }
+});
 
 app.post('/check-subscription', async (req, res) => {
   const { userId } = req.body;
@@ -170,31 +202,6 @@ app.post('/check-subscription', async (req, res) => {
   }
 });
 
-function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
-  const currentYear = new Date().getFullYear();
-  const accountYear = accountCreationDate.getFullYear();
-  const yearsOld = currentYear - accountYear;
-  const baseCoins = yearsOld * 500;
-  const premiumBonus = hasTelegramPremium ? 500 : 0;
-  const subscriptionBonus = isSubscribed ? 1000 : 0;
-  return baseCoins + premiumBonus + subscriptionBonus;
-}
-
-
-
-async function checkTelegramPremium(userId) {
-  try {
-    const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
-    console.log('chatMember:', chatMember); // Логируем результат
-    return chatMember.user.is_premium;
-  } catch (error) {
-    console.error('Ошибка при проверке Telegram Premium:', error);
-    return false; // Предположим, что у пользователя нет премиум, если произошла ошибка
-  }
-}
-
-// index.js
-
 app.post('/add-referral', async (req, res) => {
   const { referrerCode, referredId } = req.body;
 
@@ -204,17 +211,14 @@ app.post('/add-referral', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Пригласивший пользователь не найден.' });
     }
 
-    // Проверяем, существует ли уже реферал
     const referredUser = await UserProgress.findOne({ telegramId: referredId });
     if (referredUser) {
       return res.status(400).json({ success: false, message: 'Пользователь уже зарегистрирован.' });
     }
 
-    // Создаем нового пользователя с начальными монетами
     const newUser = new UserProgress({ telegramId: referredId, coins: 500 });
     await newUser.save();
 
-    // Добавляем информацию о реферале пригласившему пользователю
     referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: 500 });
     referrer.coins += 500;
     await referrer.save();
@@ -225,6 +229,7 @@ app.post('/add-referral', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
   }
 });
+
 
 app.get('/leaderboard', async (req, res) => {
   try {
@@ -256,7 +261,6 @@ app.post('/get-referred-users', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка при получении данных о рефералах.' });
   }
 });
-
 
 
 app.post('/get-coins', async (req, res) => {
@@ -297,26 +301,6 @@ app.post('/get-coins', async (req, res) => {
   }
 });
 
-
-async function updateUsersWithFirstNames() {
-  const users = await UserProgress.find({ firstName: { $exists: false } });
-  for (let user of users) {
-    const chatMember = await bot.getChatMember(CHANNEL_ID, user.telegramId);
-    const firstName = chatMember.user.first_name || 'Anonymous';
-    user.firstName = firstName;
-    await user.save();
-  }
-}
-
-
-
-updateUsersWithFirstNames().then(() => {
-  console.log('Все пользователи обновлены');
-}).catch(err => {
-  console.error('Ошибка при обновлении пользователей:', err);
-});
-
-
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
   console.log(`Received request for user rank: ${userId}`); // Логирование userId
@@ -335,9 +319,6 @@ app.get('/user-rank', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
-
-
-
 
 app.get('/get-user-data', async (req, res) => {
   const { userId } = req.query;
@@ -395,11 +376,6 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
-
-
-
-
-
 
 app.listen(port, () => {
   console.log(`Сервер работает на порту ${port}`);
