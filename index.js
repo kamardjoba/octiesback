@@ -72,36 +72,6 @@ const generateReferralCode = () => Math.random().toString(36).substr(2, 9);
 
 const generateTelegramLink = (referralCode) => `https://t.me/OCTIESS_BOT?start=${referralCode}`;
 
-app.post('/add-referral', async (req, res) => {
-  const { referrerCode, referredId } = req.body;
-
-  try {
-    const referrer = await UserProgress.findOne({ referralCode: referrerCode });
-    if (!referrer) {
-      return res.status(404).json({ success: false, message: 'Пригласивший пользователь не найден.' });
-    }
-
-    const referredUser = await UserProgress.findOne({ telegramId: referredId });
-    if (referredUser) {
-      return res.status(400).json({ success: false, message: 'Пользователь уже зарегистрирован.' });
-    }
-
-    const newUser = new UserProgress({ telegramId: referredId, coins: 500 });
-    await newUser.save();
-
-    referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: 500 });
-    referrer.coins += 500;
-    await referrer.save();
-
-    res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
-  } catch (error) {
-    console.error('Ошибка при добавлении реферала:', error);
-    res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
-  }
-});
-
-
-
 app.post('/generate-referral', async (req, res) => {
   const { userId } = req.body;
 
