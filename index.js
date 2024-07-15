@@ -209,13 +209,15 @@ function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
 
 async function checkTelegramPremium(userId) {
   try {
-    const user = await bot.getChatMember(userId, userId);
-    return user.status === 'member' && user.is_premium;
+    const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
+    console.log('chatMember:', chatMember); // Логируем результат
+    return chatMember.status === 'member' && chatMember.is_premium;
   } catch (error) {
     console.error('Ошибка при проверке Telegram Premium:', error);
     return false; // Предположим, что у пользователя нет премиум, если произошла ошибка
   }
 }
+
 
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
