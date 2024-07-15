@@ -218,15 +218,18 @@ bot.onText(/\/start/, async (msg) => {
   const userId = msg.from.id;
   const accountCreationDate = estimateAccountCreationDate(userId);
   const hasTelegramPremium = await checkTelegramPremium(userId);
-  const coins = calculateCoins(accountCreationDate, hasTelegramPremium);
+  const isSubscribed = await checkChannelSubscription(userId);
+  const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
 
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-      user = new UserProgress({ telegramId: userId, coins });
+      user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
       user.coins = coins;
+      user.hasTelegramPremium = hasTelegramPremium;
+      user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
     const appUrl = `https://66949313a3d5a00008381384--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
