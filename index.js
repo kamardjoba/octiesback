@@ -68,15 +68,9 @@ const knownIds = [
 
 ];
 
-// Генерация реферального кода
-function generateReferralCode() {
-  return Math.random().toString(36).substr(2, 9);
-}
+const generateReferralCode = () => Math.random().toString(36).substr(2, 9);
 
-// Генерация Telegram ссылки с реферальным кодом
-function generateTelegramLink(referralCode) {
-  return `https://t.me/OCTIESS_BOT?start=${referralCode}`;
-}
+const generateTelegramLink = (referralCode) => `https://t.me/OCTIESS_BOT?start=${referralCode}`;
 
 app.post('/add-referral', async (req, res) => {
   const { referrerCode, referredId } = req.body;
@@ -87,17 +81,14 @@ app.post('/add-referral', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Пригласивший пользователь не найден.' });
     }
 
-    // Проверяем, существует ли уже реферал
     const referredUser = await UserProgress.findOne({ telegramId: referredId });
     if (referredUser) {
       return res.status(400).json({ success: false, message: 'Пользователь уже зарегистрирован.' });
     }
 
-    // Создаем нового пользователя с начальными монетами
     const newUser = new UserProgress({ telegramId: referredId, coins: 500 });
     await newUser.save();
 
-    // Добавляем информацию о реферале пригласившему пользователю
     referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: 500 });
     referrer.coins += 500;
     await referrer.save();
@@ -120,7 +111,6 @@ app.post('/generate-referral', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
 
-    // Если у пользователя уже есть реферальный код, используем его
     let referralCode = user.referralCode;
     if (!referralCode) {
       referralCode = generateReferralCode();
@@ -132,8 +122,8 @@ app.post('/generate-referral', async (req, res) => {
 
     res.json({ success: true, referralCode, telegramLink });
   } catch (error) {
-    console.error('Ошибка при генерации реферальной ссылки:', error);
-    res.status(500).json({ success: false, message: 'Ошибка при генерации реферальной ссылки.' });
+    console.error('Ошибка при генерации реферального кода:', error);
+    res.status(500).json({ success: false, message: 'Ошибка при генерации реферального кода.' });
   }
 });
 
@@ -422,7 +412,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://6695601741e4190008db1684--fascinating-taiyaki-2c0745.netlify.app/?userId=${userId}`;
+    const appUrl = `https://66956d1394df020008731829--nimble-flan-b57c97.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
