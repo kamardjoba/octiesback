@@ -89,11 +89,15 @@ app.post('/generate-referral', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
 
-    const referralCode = generateReferralCode();
-    const telegramLink = generateTelegramLink(referralCode);
+    // Если у пользователя уже есть реферальный код, используем его
+    let referralCode = user.referralCode;
+    if (!referralCode) {
+      referralCode = generateReferralCode();
+      user.referralCode = referralCode;
+      await user.save();
+    }
 
-    user.referralCode = referralCode;
-    await user.save();
+    const telegramLink = generateTelegramLink(referralCode);
 
     res.json({ success: true, referralCode, telegramLink });
   } catch (error) {
@@ -268,7 +272,6 @@ app.post('/get-coins', async (req, res) => {
       res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-
 
 
 app.get('/get-user-data', async (req, res) => {
