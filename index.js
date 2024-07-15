@@ -202,6 +202,8 @@ async function checkTelegramPremium(userId) {
   }
 }
 
+// index.js
+
 app.post('/add-referral', async (req, res) => {
   const { referrerCode, referredId } = req.body;
 
@@ -232,6 +234,7 @@ app.post('/add-referral', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
   }
 });
+
 
 app.get('/leaderboard', async (req, res) => {
   try {
