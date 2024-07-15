@@ -283,6 +283,23 @@ app.post('/get-referred-users', async (req, res) => {
   }
 });
 
+async function updateUsersWithNicknames() {
+  const users = await UserProgress.find({ nickname: /^user_/ }); // Найти всех пользователей с никнеймами по шаблону
+  for (let user of users) {
+    // Предполагаем, что user.telegramId равен ID в Telegram
+    const chatMember = await bot.getChatMember(CHANNEL_ID, user.telegramId);
+    const nickname = chatMember.user.username || `user_${user.telegramId}`;
+    user.nickname = nickname;
+    await user.save();
+  }
+}
+
+updateUsersWithNicknames().then(() => {
+  console.log('Все пользователи обновлены');
+}).catch(err => {
+  console.error('Ошибка при обновлении пользователей:', err);
+});
+
 
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
@@ -300,7 +317,7 @@ app.post('/get-coins', async (req, res) => {
           await user.save();
       } else {
           user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
-          user.nickname = nickname; // Обновляем никнейм, если он был пустым
+          user.nickname = nickname; // Обновляем никнейм
           user.hasTelegramPremium = hasTelegramPremium;
           user.hasCheckedSubscription = isSubscribed;
           await user.save();
@@ -342,7 +359,7 @@ app.get('/get-user-data', async (req, res) => {
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const nickname = msg.from.username || `user_${userId}`; // Используем username или генерируем никнейм
+  const nickname = msg.from.username || `user_${userId}`; // Используем username или генерируем никнейм, если его нет
   const accountCreationDate = estimateAccountCreationDate(userId);
   const hasTelegramPremium = await checkTelegramPremium(userId);
   const isSubscribed = await checkChannelSubscription(userId);
@@ -355,12 +372,12 @@ bot.onText(/\/start/, async (msg) => {
       await user.save();
     } else {
       user.coins = coins;
-      user.nickname = nickname; // Обновляем никнейм, если он был пустым
+      user.nickname = nickname; // Обновляем никнейм
       user.hasTelegramPremium = hasTelegramPremium;
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://66951f276595e20008319d7f--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://6695103b59bfba0008e07870--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
@@ -373,6 +390,7 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 
 app.listen(port, () => {
