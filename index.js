@@ -286,6 +286,7 @@ app.post('/get-referred-users', async (req, res) => {
 
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
+  const nickname = req.body.nickname || `user_${userId}`; // Убедитесь, что nickname передается
   const accountCreationDate = estimateAccountCreationDate(userId);
 
   try {
@@ -295,10 +296,11 @@ app.post('/get-coins', async (req, res) => {
       let user = await UserProgress.findOne({ telegramId: userId });
       if (!user) {
           const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
-          user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
+          user = new UserProgress({ telegramId: userId, nickname, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
           await user.save();
       } else {
           user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+          user.nickname = nickname; // Обновляем никнейм, если он был пустым
           user.hasTelegramPremium = hasTelegramPremium;
           user.hasCheckedSubscription = isSubscribed;
           await user.save();
@@ -340,6 +342,7 @@ app.get('/get-user-data', async (req, res) => {
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
+  const nickname = msg.from.username || `user_${userId}`; // Используем username или генерируем никнейм
   const accountCreationDate = estimateAccountCreationDate(userId);
   const hasTelegramPremium = await checkTelegramPremium(userId);
   const isSubscribed = await checkChannelSubscription(userId);
@@ -348,10 +351,11 @@ bot.onText(/\/start/, async (msg) => {
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-      user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
+      user = new UserProgress({ telegramId: userId, nickname, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
       user.coins = coins;
+      user.nickname = nickname; // Обновляем никнейм, если он был пустым
       user.hasTelegramPremium = hasTelegramPremium;
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
@@ -369,6 +373,7 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Сервер работает на порту ${port}`);
