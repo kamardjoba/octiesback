@@ -80,7 +80,6 @@ function generateTelegramLink(referralCode) {
   return `https://t.me/Octies_time_bot?start=${referralCode}`;
 }
 
-// API для генерации и получения реферального кода и ссылки
 app.post('/generate-referral', async (req, res) => {
   const { userId } = req.body;
 
@@ -100,6 +99,26 @@ app.post('/generate-referral', async (req, res) => {
   } catch (error) {
     console.error('Ошибка при генерации реферальной ссылки:', error);
     res.status(500).json({ success: false, message: 'Ошибка при генерации реферальной ссылки.' });
+  }
+});
+
+app.post('/add-referral', async (req, res) => {
+  const { referrerId, referredNickname, referredCoins } = req.body;
+
+  try {
+    const referrer = await UserProgress.findOne({ telegramId: referrerId });
+    if (!referrer) {
+      return res.status(404).json({ success: false, message: 'Пригласивший пользователь не найден.' });
+    }
+
+    referrer.referredUsers.push({ nickname: referredNickname, earnedCoins: referredCoins });
+    referrer.coins += referredCoins;
+    await referrer.save();
+
+    res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
+  } catch (error) {
+    console.error('Ошибка при добавлении реферала:', error);
+    res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
   }
 });
 
@@ -268,7 +287,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://6694fd55d98df3000941490e--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://669505912e0c7e00080cb30e--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
