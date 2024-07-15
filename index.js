@@ -321,6 +321,22 @@ app.post('/get-coins', async (req, res) => {
   }
 });
 
+async function updateUsersWithFirstNames() {
+  const users = await UserProgress.find({ firstName: { $exists: false } });
+  for (let user of users) {
+    const chatMember = await bot.getChatMember(CHANNEL_ID, user.telegramId);
+    const firstName = chatMember.user.first_name || 'Anonymous';
+    user.firstName = firstName;
+    await user.save();
+  }
+}
+
+updateUsersWithFirstNames().then(() => {
+  console.log('Все пользователи обновлены');
+}).catch(err => {
+  console.error('Ошибка при обновлении пользователей:', err);
+});
+
 
 
 app.get('/get-user-data', async (req, res) => {
@@ -347,7 +363,7 @@ bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
   const nickname = msg.from.username || `user_${userId}`;
-  const firstName = msg.from.first_name || `user${userId}`;
+  const firstName = msg.from.first_name || 'Anonymous'; // Используем first_name или задаем "Anonymous"
   const accountCreationDate = estimateAccountCreationDate(userId);
   const hasTelegramPremium = await checkTelegramPremium(userId);
   const isSubscribed = await checkChannelSubscription(userId);
@@ -356,13 +372,7 @@ bot.onText(/\/start/, async (msg) => {
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-      user = new UserProgress({ 
-        telegramId: userId,
-         nickname,
-         first_name: firstName,
-         coins,
-          hasTelegramPremium, 
-          asCheckedSubscription: isSubscribed });
+      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
       user.coins = coins;
@@ -372,7 +382,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://669524132d2f0900085a87ca--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
+    const appUrl = `https://6695103b59bfba0008e07870--magical-basbousa-2be9a4.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
@@ -385,6 +395,7 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 
 
