@@ -104,6 +104,7 @@ app.post('/generate-referral', async (req, res) => {
 
 
 
+
 function estimateAccountCreationDate(userId) {
   for (let i = 0; i < knownIds.length - 1; i++) {
         if (userId < knownIds[i + 1].id) {
