@@ -154,6 +154,17 @@ async function checkTelegramPremium(userId) {
   }
 }
 
+app.get('/user-count', async (req, res) => {
+  try {
+    const count = await UserProgress.countDocuments();
+    res.json({ success: true, count });
+  } catch (error) {
+    console.error('Ошибка при получении количества пользователей:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+});
+
+
 app.post('/generate-referral', async (req, res) => {
   const { userId } = req.body;
 
@@ -363,7 +374,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://669577608b38de0008a72bdf--unrivaled-semolina-77b2fc.netlify.app/?userId=${userId}`;
+    const appUrl = `https://66957b9dadf3520008ed195e--fascinating-taiyaki-2c0745.netlify.app/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
