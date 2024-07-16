@@ -71,6 +71,7 @@ const generateReferralCode = () => Math.random().toString(36).substr(2, 9);
 
 const generateTelegramLink = (referralCode) => `https://t.me/OCTIESS_BOT?start=${referralCode}`;
 
+
 updateUsersWithFirstNames().then(() => {
   console.log('Все пользователи обновлены');
 }).catch(err => {
@@ -372,7 +373,7 @@ bot.onText(/\/start/, async (msg) => {
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
-    const appUrl = `https://669662cf6595e20008eabdc3--nimble-flan-b57c97.netlify.app/?userId=${userId}`;
+    const appUrl = `https://chiharda.online/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
