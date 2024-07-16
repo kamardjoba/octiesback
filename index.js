@@ -270,7 +270,7 @@ app.post('/check-subscription-and-update', async (req, res) => {
 app.get('/leaderboard', async (req, res) => {
   try {
     const users = await UserProgress.find({});
-    
+
     const leaderboard = users.map(user => {
       const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
       return {
@@ -286,6 +286,7 @@ app.get('/leaderboard', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
+
 
 
 app.post('/get-referred-users', async (req, res) => {
