@@ -303,8 +303,12 @@ app.post('/get-coins', async (req, res) => {
       await user.save();
     }
 
+    // Добавляем заработанные монеты за рефералов к общему количеству монет пользователя
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const totalCoins = user.coins + referralCoins;
+
     res.json({
-      coins: user.coins,
+      coins: totalCoins,
       hasTelegramPremium: user.hasTelegramPremium,
       hasCheckedSubscription: user.hasCheckedSubscription,
       accountCreationDate: accountCreationDate.toISOString()
@@ -314,6 +318,7 @@ app.post('/get-coins', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
@@ -408,17 +413,6 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
-
-
-
-
-
-
-
-
-
-
-
 
 app.listen(port, () => {
   console.log(`Сервер работает на порту ${port}`);
