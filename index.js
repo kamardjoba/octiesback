@@ -299,7 +299,7 @@ app.get('/leaderboard', async (req, res) => {
       return {
         _id: user._id,
         nickname: user.nickname,
-        coins: user.coins + referralCoins // Суммируем монеты с учетом рефералов
+        coins: user.coins //+ referralCoins // Суммируем монеты с учетом рефералов
       };
     }).sort((a, b) => b.coins - a.coins).slice(0, 50);
 
