@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001;
 const token = "7180327016:AAEZErJk-k0CXM9xw2ix_kxDqKto1iXlziw";
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
-const CHANNEL_ID = -1002202574694; 
+const CHANNEL_ID = -1002187857390; 
 
 app.use(cors());
 app.use(bodyParser.json());
