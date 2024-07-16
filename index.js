@@ -266,6 +266,28 @@ app.post('/check-subscription-and-update', async (req, res) => {
   }
 });
 
+app.post('/check-subscription-and-update', async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const isSubscribed = await checkChannelSubscription(userId);
+    let user = await UserProgress.findOne({ telegramId: userId });
+
+    if (user) {
+      if (isSubscribed && !user.hasCheckedSubscription) {
+        user.coins += 1000; // Добавляем награду за подписку
+        user.hasCheckedSubscription = true;
+        await user.save();
+      }
+      res.json({ success: true, coins: user.coins, isSubscribed });
+    } else {
+      res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+    }
+  } catch (error) {
+    console.error('Ошибка при проверке подписки:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
 
 app.get('/leaderboard', async (req, res) => {
   try {
