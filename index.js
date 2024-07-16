@@ -377,14 +377,15 @@ app.post('/get-coins', async (req, res) => {
 
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
-  const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-  const totalCoins = user.coins + referralCoins;
+  
   try {
     const user = await UserProgress.findOne({ telegramId: userId });
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const totalCoins = user.coins + referralCoins;
     if (!user) {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
-
+    
     const rank = await UserProgress.countDocuments({ coins: { $gt: totalCoins } }) ;
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
