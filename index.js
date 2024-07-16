@@ -382,9 +382,8 @@ app.get('/user-rank', async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
-    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-    const totalCoins = user.coins + referralCoins;
-    const rank = await UserProgress.countDocuments({ coins: { $gt: totalCoins} });
+
+    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins} });
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
     console.error('Ошибка при получении позиции пользователя:', error);
