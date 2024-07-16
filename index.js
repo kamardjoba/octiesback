@@ -234,7 +234,7 @@ app.post('/add-referral', async (req, res) => {
     const referralBonus = Math.floor(newUser.coins * 0.1);
     referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: referralBonus });
     referrer.coins += referralBonus;
-    user.coins += referralBonus;
+    //user.coins += referralBonus;
     await referrer.save();
 
     res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
@@ -383,20 +383,13 @@ app.get('/user-rank', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
 
-    // Суммируем монеты пользователя с монетами, заработанными за рефералов
-    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-    const totalCoins = user.coins + referralCoins;
-
-    // Вычисляем ранг на основе общего количества монет
-    const rank = await UserProgress.countDocuments({ coins: { $gt: totalCoins } }) ;
-    
+    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins} }) +1;
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
     console.error('Ошибка при получении позиции пользователя:', error);
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
-
 
 
 app.get('/get-user-data', async (req, res) => {
@@ -432,49 +425,50 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
   const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
 
   try {
-    let user = await UserProgress.findOne({ telegramId: userId });
-    const isNewUser = !user;
+      let user = await UserProgress.findOne({ telegramId: userId });
+      const isNewUser = !user;
 
-    if (isNewUser) {
-      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
-      await user.save();
-    } else {
-      user.coins = coins;
-      user.nickname = nickname;
-      user.firstName = firstName;
-      user.hasTelegramPremium = hasTelegramPremium;
-      user.hasCheckedSubscription = isSubscribed;
-      await user.save();
-    }
-
-    // Если есть реферальный код и пользователь новый, проверяем код и добавляем реферала
-    if (referrerCode && isNewUser) {
-      if (referrerCode === user.referralCode) {
-        bot.sendMessage(chatId, 'Вы не можете использовать свою собственную реферальную ссылку.');
+      if (isNewUser) {
+          user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
+          await user.save();
       } else {
-        const referrer = await UserProgress.findOne({ referralCode: referrerCode });
-        if (referrer) {
-          const referralBonus = Math.floor(user.coins * 0.1);
-          referrer.referredUsers.push({ nickname, earnedCoins: referralBonus });
-          referrer.coins += referralBonus;
-          await referrer.save();
-        }
+          user.coins = coins;
+          user.nickname = nickname;
+          user.firstName = firstName;
+          user.hasTelegramPremium = hasTelegramPremium;
+          user.hasCheckedSubscription = isSubscribed;
+          await user.save();
       }
-    }
 
-    const appUrl = `https://chiharda.online/?userId=${userId}`;
-    bot.sendMessage(chatId, 'Запустить приложение', {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: 'Играть', web_app: { url: appUrl } }]
-        ]
+      // Если есть реферальный код и пользователь новый, проверяем код и добавляем реферала
+      if (referrerCode && isNewUser) {
+          if (referrerCode === user.referralCode) {
+              bot.sendMessage(chatId, 'Вы не можете использовать свою собственную реферальную ссылку.');
+          } else {
+              const referrer = await UserProgress.findOne({ referralCode: referrerCode });
+              if (referrer) {
+                  const referralBonus = Math.floor(user.coins * 0.1);
+                  referrer.referredUsers.push({ nickname, earnedCoins: referralBonus });
+                  referrer.coins += referralBonus;
+                  await referrer.save();
+              }
+          }
       }
-    });
+
+      const appUrl = `https://chiharda.online/?userId=${userId}`;
+      bot.sendMessage(chatId, 'Запустить приложение', {
+          reply_markup: {
+              inline_keyboard: [
+                  [{ text: 'Играть', web_app: { url: appUrl } }]
+              ]
+          }
+      });
   } catch (error) {
-    console.error('Ошибка при создании пользователя:', error);
-    bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
+      console.error('Ошибка при создании пользователя:', error);
+      bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Сервер работает на порту ${port}`);
