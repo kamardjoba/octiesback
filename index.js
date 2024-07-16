@@ -247,11 +247,16 @@ app.post('/add-referral', async (req, res) => {
 
 app.get('/leaderboard', async (req, res) => {
   try {
-    const leaderboard = await UserProgress.find({})
-      .sort({ coins: -1 })
-      .limit(50)
-      .select('nickname coins') // Обновите это поле, чтобы выбрать nickname
-      .lean();
+    const users = await UserProgress.find({});
+    
+    const leaderboard = users.map(user => {
+      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+      return {
+        _id: user._id,
+        nickname: user.nickname,
+        coins: user.coins + referralCoins // Суммируем монеты с учетом рефералов
+      };
+    }).sort((a, b) => b.coins - a.coins).slice(0, 50);
 
     res.json({ success: true, leaderboard });
   } catch (error) {
@@ -259,6 +264,7 @@ app.get('/leaderboard', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
+
 
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
@@ -309,6 +315,7 @@ app.post('/get-coins', async (req, res) => {
 
     res.json({
       coins: totalCoins,
+      referralCoins: referralCoins, // Добавляем общее количество монет за рефералов в ответ
       hasTelegramPremium: user.hasTelegramPremium,
       hasCheckedSubscription: user.hasCheckedSubscription,
       accountCreationDate: accountCreationDate.toISOString()
@@ -318,6 +325,8 @@ app.post('/get-coins', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
+
 
 
 app.get('/user-rank', async (req, res) => {
