@@ -349,10 +349,11 @@ app.get('/get-user-data', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-bot.onText(/\/start (.+)/, async (msg, match) => {
+
+bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const referrerCode = match[1];
+  const referrerCode = match[1]; // Может быть undefined, если команда без параметра
 
   const nickname = msg.from.username || `user_${userId}`;
   const firstName = msg.from.first_name || 'Anonymous';
@@ -375,6 +376,7 @@ bot.onText(/\/start (.+)/, async (msg, match) => {
       await user.save();
     }
 
+    // Если есть реферальный код, обновляем данные пригласившего пользователя
     if (referrerCode) {
       const referrer = await UserProgress.findOne({ referralCode: referrerCode });
       if (referrer) {
@@ -397,6 +399,13 @@ bot.onText(/\/start (.+)/, async (msg, match) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
+
+
+
+
+
+
 
 
 app.listen(port, () => {
