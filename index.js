@@ -376,13 +376,17 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       await user.save();
     }
 
-    // Если есть реферальный код, обновляем данные пригласившего пользователя
+    // Если есть реферальный код, проверяем, что он не совпадает с кодом текущего пользователя
     if (referrerCode) {
-      const referrer = await UserProgress.findOne({ referralCode: referrerCode });
-      if (referrer) {
-        referrer.referredUsers.push({ nickname, earnedCoins: 500 });
-        referrer.coins += 500;
-        await referrer.save();
+      if (referrerCode === user.referralCode) {
+        bot.sendMessage(chatId, 'Вы не можете использовать свою собственную реферальную ссылку.');
+      } else {
+        const referrer = await UserProgress.findOne({ referralCode: referrerCode });
+        if (referrer) {
+          referrer.referredUsers.push({ nickname, earnedCoins: 500 });
+          referrer.coins += 500;
+          await referrer.save();
+        }
       }
     }
 
@@ -399,6 +403,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 
 
