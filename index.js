@@ -383,7 +383,7 @@ app.get('/user-rank', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
 
-    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins + referralCoins } }) ;
+    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins } }) + 1;
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
     console.error('Ошибка при получении позиции пользователя:', error);
