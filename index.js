@@ -231,8 +231,9 @@ app.post('/add-referral', async (req, res) => {
     const newUser = new UserProgress({ telegramId: referredId, coins: 500 });
     await newUser.save();
 
-    referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: 500 });
-    referrer.coins += 500;
+    const referralBonus = Math.floor(newUser.coins * 0.1);
+    referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: referralBonus });
+    referrer.coins += referralBonus;
     await referrer.save();
 
     res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
@@ -241,6 +242,7 @@ app.post('/add-referral', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
   }
 });
+
 
 
 app.get('/leaderboard', async (req, res) => {
@@ -385,8 +387,9 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       } else {
         const referrer = await UserProgress.findOne({ referralCode: referrerCode });
         if (referrer) {
-          referrer.referredUsers.push({ nickname, earnedCoins: 500 });
-          referrer.coins += 500;
+          const referralBonus = Math.floor(user.coins * 0.1);
+          referrer.referredUsers.push({ nickname, earnedCoins: referralBonus });
+          referrer.coins += referralBonus;
           await referrer.save();
         }
       }
@@ -405,6 +408,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 
 
