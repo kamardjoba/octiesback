@@ -383,13 +383,20 @@ app.get('/user-rank', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
 
-    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins} });
+    // Суммируем монеты пользователя с монетами, заработанными за рефералов
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const totalCoins = user.coins + referralCoins;
+
+    // Вычисляем ранг на основе общего количества монет
+    const rank = await UserProgress.countDocuments({ coins: { $gt: totalCoins } }) + 1;
+    
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
     console.error('Ошибка при получении позиции пользователя:', error);
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
+
 
 
 app.get('/get-user-data', async (req, res) => {
