@@ -267,32 +267,6 @@ app.post('/check-subscription-and-update', async (req, res) => {
   }
 });
 
-// index.js
-
-app.post('/check-subscription-and-update', async (req, res) => {
-  const { userId } = req.body;
-
-  try {
-    const isSubscribed = await checkChannelSubscription(userId);
-    let user = await UserProgress.findOne({ telegramId: userId });
-
-    if (user) {
-      if (isSubscribed && !user.hasCheckedSubscription) {
-        user.coins += 1000; // Добавляем награду за подписку
-        user.hasCheckedSubscription = true;
-        await user.save();
-      }
-      res.json({ success: true, coins: user.coins, isSubscribed });
-    } else {
-      res.status(404).json({ success: false, message: 'Пользователь не найден.' });
-    }
-  } catch (error) {
-    console.error('Ошибка при проверке подписки:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
-  }
-});
-
-
 app.get('/leaderboard', async (req, res) => {
   try {
     const users = await UserProgress.find({});
@@ -313,8 +287,6 @@ app.get('/leaderboard', async (req, res) => {
   }
 });
 
-
-
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
 
@@ -330,7 +302,6 @@ app.post('/get-referred-users', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка при получении данных о рефералах.' });
   }
 });
-
 
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
@@ -374,10 +345,6 @@ app.post('/get-coins', async (req, res) => {
   }
 });
 
-
-
-
-
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
   try {
@@ -393,7 +360,6 @@ app.get('/user-rank', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
-
 
 app.get('/get-user-data', async (req, res) => {
   const { userId } = req.query;
