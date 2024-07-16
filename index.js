@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001;
 const token = "7180327016:AAEZErJk-k0CXM9xw2ix_kxDqKto1iXlziw";
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
-const CHANNEL_ID = -1002202574694; 
+const CHANNEL_ID = -1002187857390; 
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -243,15 +243,42 @@ app.post('/add-referral', async (req, res) => {
   }
 });
 
+app.post('/check-subscription-and-update', async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const isSubscribed = await checkChannelSubscription(userId);
+    let user = await UserProgress.findOne({ telegramId: userId });
+
+    if (user) {
+      if (isSubscribed && !user.hasCheckedSubscription) {
+        user.coins += 1000; // Добавляем награду за подписку
+        user.hasCheckedSubscription = true;
+        await user.save();
+      }
+      res.json({ success: true, coins: user.coins, isSubscribed });
+    } else {
+      res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+    }
+  } catch (error) {
+    console.error('Ошибка при проверке подписки:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
 
 
 app.get('/leaderboard', async (req, res) => {
   try {
-    const leaderboard = await UserProgress.find({})
-      .sort({ coins: -1 })
-      .limit(50)
-      .select('nickname coins') // Обновите это поле, чтобы выбрать nickname
-      .lean();
+    const users = await UserProgress.find({});
+
+    const leaderboard = users.map(user => {
+      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+      return {
+        _id: user._id,
+        nickname: user.nickname,
+        coins: user.coins + referralCoins // Суммируем монеты с учетом рефералов
+      };
+    }).sort((a, b) => b.coins - a.coins).slice(0, 50);
 
     res.json({ success: true, leaderboard });
   } catch (error) {
@@ -259,6 +286,8 @@ app.get('/leaderboard', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
+
+
 
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
@@ -303,8 +332,13 @@ app.post('/get-coins', async (req, res) => {
       await user.save();
     }
 
+    // Добавляем заработанные монеты за рефералов к общему количеству монет пользователя
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const totalCoins = user.coins + referralCoins;
+
     res.json({
-      coins: user.coins,
+      coins: totalCoins,
+      referralCoins: referralCoins, // Добавляем общее количество монет за рефералов в ответ
       hasTelegramPremium: user.hasTelegramPremium,
       hasCheckedSubscription: user.hasCheckedSubscription,
       accountCreationDate: accountCreationDate.toISOString()
@@ -314,6 +348,9 @@ app.post('/get-coins', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
+
+
 
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
@@ -408,17 +445,6 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
-
-
-
-
-
-
-
-
-
-
-
 
 app.listen(port, () => {
   console.log(`Сервер работает на порту ${port}`);
