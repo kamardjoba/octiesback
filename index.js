@@ -388,7 +388,7 @@ app.get('/user-rank', async (req, res) => {
     const totalCoins = user.coins + referralCoins;
 
     // Вычисляем ранг на основе общего количества монет
-    const rank = await UserProgress.countDocuments({ coins: { $gt: totalCoins } }) + 1;
+    const rank = await UserProgress.countDocuments({ coins: { $gt: totalCoins } }) ;
     
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
