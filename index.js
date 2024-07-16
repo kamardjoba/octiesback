@@ -349,12 +349,13 @@ app.get('/get-user-data', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-
-bot.onText(/\/start/, async (msg) => {
+bot.onText(/\/start (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
+  const referrerCode = match[1];
+
   const nickname = msg.from.username || `user_${userId}`;
-  const firstName = msg.from.first_name || 'Anonymous'; // Используем first_name или задаем "Anonymous"
+  const firstName = msg.from.first_name || 'Anonymous';
   const accountCreationDate = estimateAccountCreationDate(userId);
   const hasTelegramPremium = await checkTelegramPremium(userId);
   const isSubscribed = await checkChannelSubscription(userId);
@@ -368,11 +369,21 @@ bot.onText(/\/start/, async (msg) => {
     } else {
       user.coins = coins;
       user.nickname = nickname;
-      user.firstName = firstName; // Обновляем имя
+      user.firstName = firstName;
       user.hasTelegramPremium = hasTelegramPremium;
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
+
+    if (referrerCode) {
+      const referrer = await UserProgress.findOne({ referralCode: referrerCode });
+      if (referrer) {
+        referrer.referredUsers.push({ nickname, earnedCoins: 500 });
+        referrer.coins += 500;
+        await referrer.save();
+      }
+    }
+
     const appUrl = `https://chiharda.online/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
@@ -386,6 +397,7 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Сервер работает на порту ${port}`);
