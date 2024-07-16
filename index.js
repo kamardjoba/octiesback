@@ -350,40 +350,51 @@ app.get('/get-user-data', async (req, res) => {
   }
 });
 
-bot.onText(/\/start/, async (msg) => {
+bot.onText(/\/start (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
+  const referrerCode = match[1]; // Получаем реферальный код из сообщения
   const nickname = msg.from.username || `user_${userId}`;
-  const firstName = msg.from.first_name || 'Anonymous'; // Используем first_name или задаем "Anonymous"
+  const firstName = msg.from.first_name || 'Anonymous';
   const accountCreationDate = estimateAccountCreationDate(userId);
   const hasTelegramPremium = await checkTelegramPremium(userId);
   const isSubscribed = await checkChannelSubscription(userId);
   const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
 
   try {
-    let user = await UserProgress.findOne({ telegramId: userId });
-    if (!user) {
-      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
-      await user.save();
-    } else {
-      user.coins = coins;
-      user.nickname = nickname;
-      user.firstName = firstName; // Обновляем имя
-      user.hasTelegramPremium = hasTelegramPremium;
-      user.hasCheckedSubscription = isSubscribed;
-      await user.save();
-    }
-    const appUrl = `https://chiharda.online/?userId=${userId}`;
-    bot.sendMessage(chatId, 'Запустить приложение', {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: 'Играть', web_app: { url: appUrl } }]
-        ]
+      let user = await UserProgress.findOne({ telegramId: userId });
+      if (!user) {
+          user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
+          await user.save();
+
+          if (referrerCode) {
+              const referrer = await UserProgress.findOne({ referralCode: referrerCode });
+              if (referrer) {
+                  referrer.referredUsers.push({ nickname, earnedCoins: 500 });
+                  referrer.coins += 500;
+                  await referrer.save();
+              }
+          }
+      } else {
+          user.coins = coins;
+          user.nickname = nickname;
+          user.firstName = firstName;
+          user.hasTelegramPremium = hasTelegramPremium;
+          user.hasCheckedSubscription = isSubscribed;
+          await user.save();
       }
-    });
+
+      const appUrl = `https://chiharda.online/?userId=${userId}`;
+      bot.sendMessage(chatId, 'Запустить приложение', {
+          reply_markup: {
+              inline_keyboard: [
+                  [{ text: 'Играть', web_app: { url: appUrl } }]
+              ]
+          }
+      });
   } catch (error) {
-    console.error('Ошибка при создании пользователя:', error);
-    bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
+      console.error('Ошибка при создании пользователя:', error);
+      bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
 
