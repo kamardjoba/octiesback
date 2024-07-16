@@ -364,7 +364,9 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
 
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
-    if (!user) {
+    const isNewUser = !user;
+
+    if (isNewUser) {
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
@@ -376,8 +378,8 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       await user.save();
     }
 
-    // Если есть реферальный код, проверяем, что он не совпадает с кодом текущего пользователя
-    if (referrerCode) {
+    // Если есть реферальный код и пользователь новый, проверяем код и добавляем реферала
+    if (referrerCode && isNewUser) {
       if (referrerCode === user.referralCode) {
         bot.sendMessage(chatId, 'Вы не можете использовать свою собственную реферальную ссылку.');
       } else {
@@ -403,6 +405,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 
 
