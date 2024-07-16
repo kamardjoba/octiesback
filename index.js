@@ -269,7 +269,8 @@ app.post('/check-subscription-and-update', async (req, res) => {
 
 app.post('/check-subscription-and-update', async (req, res) => {
   const { userId } = req.body;
-
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const totalCoins = user.coins + referralCoins;
   try {
     const isSubscribed = await checkChannelSubscription(userId);
     let user = await UserProgress.findOne({ telegramId: userId });
@@ -277,6 +278,7 @@ app.post('/check-subscription-and-update', async (req, res) => {
     if (user) {
       if (isSubscribed && !user.hasCheckedSubscription) {
         user.coins += 1000; // Добавляем награду за подписку
+        user.coins += totalCoins;
         user.hasCheckedSubscription = true;
         await user.save();
       }
