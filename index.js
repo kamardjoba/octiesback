@@ -134,6 +134,7 @@ async function checkChannelSubscription(telegramId) {
   }
 }
 
+
 function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
   const currentYear = new Date().getFullYear();
   const accountYear = accountCreationDate.getFullYear();
@@ -266,6 +267,8 @@ app.post('/check-subscription-and-update', async (req, res) => {
   }
 });
 
+// index.js
+
 app.post('/check-subscription-and-update', async (req, res) => {
   const { userId } = req.body;
 
@@ -288,6 +291,7 @@ app.post('/check-subscription-and-update', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 app.get('/leaderboard', async (req, res) => {
   try {
@@ -337,8 +341,8 @@ app.post('/get-coins', async (req, res) => {
     const isSubscribed = await checkChannelSubscription(userId);
 
     const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
-    const firstName = chatMember.user.first_name || 'Anonymous'; // Используем first_name или задаем "Anonymous"
-    const nickname = chatMember.user.username || `user_${userId}`; // Используем username или генерируем никнейм
+    const firstName = chatMember.user.first_name || 'Anonymous';
+    const nickname = chatMember.user.username || `user_${userId}`;
 
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
@@ -348,19 +352,18 @@ app.post('/get-coins', async (req, res) => {
     } else {
       user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
       user.nickname = nickname;
-      user.firstName = firstName; // Обновляем имя
+      user.firstName = firstName;
       user.hasTelegramPremium = hasTelegramPremium;
       user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
 
-    // Добавляем заработанные монеты за рефералов к общему количеству монет пользователя
     const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
     const totalCoins = user.coins + referralCoins;
 
     res.json({
       coins: totalCoins,
-      referralCoins: referralCoins, // Добавляем общее количество монет за рефералов в ответ
+      referralCoins: referralCoins,
       hasTelegramPremium: user.hasTelegramPremium,
       hasCheckedSubscription: user.hasCheckedSubscription,
       accountCreationDate: accountCreationDate.toISOString()
@@ -370,6 +373,7 @@ app.post('/get-coins', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 
 
