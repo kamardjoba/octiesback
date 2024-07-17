@@ -299,7 +299,7 @@ app.post('/get-coins', async (req, res) => {
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
-      user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+      user.coins = user.coins;
       user.nickname = nickname;
       user.firstName = firstName; // Обновляем имя
       user.hasTelegramPremium = hasTelegramPremium;
