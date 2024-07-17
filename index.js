@@ -103,14 +103,16 @@ function estimateAccountCreationDate(userId) {
       return estimatedDate;
 }
 
-function calculateCoins(accountCreationDate, hasTelegramPremium) {
+function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, referralCoins) {
   const currentYear = new Date().getFullYear();
   const accountYear = accountCreationDate.getFullYear();
   const yearsOld = currentYear - accountYear;
   const baseCoins = yearsOld * 500;
   const premiumBonus = hasTelegramPremium ? 500 : 0;
-  return baseCoins + premiumBonus;
+  const subscriptionBonus = isSubscribed ? 1000 : 0;
+  return baseCoins + premiumBonus + subscriptionBonus + referralCoins;
 }
+
 
 async function checkChannelSubscription(telegramId) {
   try {
@@ -281,7 +283,6 @@ app.post('/get-referred-users', async (req, res) => {
   }
 });
 
-
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
   const accountCreationDate = estimateAccountCreationDate(userId);
@@ -296,11 +297,13 @@ app.post('/get-coins', async (req, res) => {
 
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, 0);
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
-      user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+      // Добавляем заработанные монеты за рефералов
+      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+      user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, referralCoins);
       user.nickname = nickname;
       user.firstName = firstName; // Обновляем имя
       user.hasTelegramPremium = hasTelegramPremium;
@@ -308,13 +311,8 @@ app.post('/get-coins', async (req, res) => {
       await user.save();
     }
 
-    // Добавляем заработанные монеты за рефералов к общему количеству монет пользователя
-    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-    const totalCoins = user.coins + referralCoins;
-
     res.json({
-      coins: totalCoins,
-      referralCoins: referralCoins, // Добавляем общее количество монет за рефералов в ответ
+      coins: user.coins,
       hasTelegramPremium: user.hasTelegramPremium,
       hasCheckedSubscription: user.hasCheckedSubscription,
       accountCreationDate: accountCreationDate.toISOString()
@@ -325,35 +323,6 @@ app.post('/get-coins', async (req, res) => {
   }
 });
 
-app.post('/referral-link-click', async (req, res) => {
-  const { referralCode, referredId } = req.body;
-
-  try {
-    const referrer = await UserProgress.findOne({ referralCode });
-    if (!referrer) {
-      return res.status(404).json({ success: false, message: 'Пригласивший пользователь не найден.' });
-    }
-
-    const referredUser = await UserProgress.findOne({ telegramId: referredId });
-    if (!referredUser) {
-      // Создаем нового пользователя, если его еще нет
-      const newUser = new UserProgress({ telegramId: referredId, coins: 500 }); // Начисляем начальные монеты новому пользователю
-      await newUser.save();
-
-      const referralBonus = 500; // Количество монет за реферала
-      referrer.coins += referralBonus;
-      referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: referralBonus });
-      await referrer.save();
-
-      res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
-    } else {
-      res.status(400).json({ success: false, message: 'Пользователь уже зарегистрирован.' });
-    }
-  } catch (error) {
-    console.error('Ошибка при добавлении реферала:', error);
-    res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
-  }
-});
 
 
 app.get('/user-rank', async (req, res) => {
@@ -438,6 +407,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
+      
       user.coins = coins;
       user.nickname = nickname;
       user.firstName = firstName;
