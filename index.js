@@ -290,25 +290,7 @@ app.post('/check-subscription-and-update', async (req, res) => {
   }
 });
 
-app.get('/leaderboard', async (req, res) => {
-  try {
-    const users = await UserProgress.find({});
 
-    const leaderboard = users.map(user => {
-      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-      return {
-        _id: user._id,
-        nickname: user.nickname,
-        coins: user.coins + referralCoins // Суммируем монеты с учетом рефералов
-      };
-    }).sort((a, b) => b.coins - a.coins).slice(0, 50);
-
-    res.json({ success: true, leaderboard });
-  } catch (error) {
-    console.error('Ошибка при получении данных лидерборда:', error);
-    res.status(500).json({ success: false, message: 'Ошибка сервера' });
-  }
-});
 
 
 
@@ -372,6 +354,7 @@ app.post('/get-coins', async (req, res) => {
   }
 });
 
+
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
   try {
@@ -380,14 +363,36 @@ app.get('/user-rank', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
 
+    // Рассчитываем монеты, включая монеты за рефералов
     const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
     const totalCoins = user.coins + referralCoins;
 
+    // Рассчитываем позицию пользователя, учитывая общие монеты
     const rank = await UserProgress.countDocuments({ coins: { $gt: totalCoins } }) + 1;
 
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
     console.error('Ошибка при получении позиции пользователя:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+});
+
+app.get('/leaderboard', async (req, res) => {
+  try {
+    const users = await UserProgress.find({});
+
+    const leaderboard = users.map(user => {
+      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+      return {
+        _id: user._id,
+        nickname: user.nickname,
+        coins: user.coins + referralCoins // Суммируем монеты с учетом рефералов
+      };
+    }).sort((a, b) => b.coins - a.coins).slice(0, 50);
+
+    res.json({ success: true, leaderboard });
+  } catch (error) {
+    console.error('Ошибка при получении данных лидерборда:', error);
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
