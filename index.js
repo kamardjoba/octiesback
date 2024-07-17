@@ -335,11 +335,10 @@ app.get('/user-rank', async (req, res) => {
     }
 
     // Рассчитываем монеты, включая монеты за рефералов
-    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-    const totalCoins = user.coins + referralCoins;
+    
 
     // Рассчитываем позицию пользователя, учитывая общие монеты
-    const rank = await UserProgress.countDocuments({ coins: { $gt: totalCoins } }) + 1;
+    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins } }) + 1;
 
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
