@@ -113,24 +113,25 @@ function calculateCoins(accountCreationDate, hasTelegramPremium) {
 
 async function checkChannelSubscription(telegramId) {
   try {
-    const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
-      params: {
-        chat_id: CHANNEL_ID,
-        user_id: telegramId
-      }
-    });
+      const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+          params: {
+              chat_id: CHANNEL_ID,
+              user_id: telegramId
+          }
+      });
 
-    if (response.data.ok) {
-      const status = response.data.result.status;
-      return ['member', 'administrator', 'creator'].includes(status);
-    } else {
-      return false;
-    }
+      if (response.data.ok) {
+          const status = response.data.result.status;
+          return ['member', 'administrator', 'creator'].includes(status);
+      } else {
+          return false;
+      }
   } catch (error) {
-    console.error('Ошибка при проверке подписки на канал:', error);
-    return false;
+      console.error('Ошибка при проверке подписки на канал:', error);
+      return false;
   }
 }
+
 
 function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
   const currentYear = new Date().getFullYear();
@@ -243,27 +244,26 @@ app.post('/add-referral', async (req, res) => {
 
 app.post('/check-subscription-and-update', async (req, res) => {
   const { userId } = req.body;
-
   try {
-    const isSubscribed = await checkChannelSubscription(userId);
-    let user = await UserProgress.findOne({ telegramId: userId });
+      const isSubscribed = await checkChannelSubscription(userId);
+      let user = await UserProgress.findOne({ telegramId: userId });
 
-    if (user) {
-      if (isSubscribed && !user.hasCheckedSubscription) {
-        user.coins += 1000; // Добавляем награду за подписку
-        user.hasCheckedSubscription = true;
-      } else if (!isSubscribed && user.hasCheckedSubscription) {
-        user.coins -= 1000; // Вычитаем монеты за отписку
-        user.hasCheckedSubscription = false;
+      if (user) {
+          if (isSubscribed && !user.hasCheckedSubscription) {
+              user.coins += 1000; // Добавляем награду за подписку
+              user.hasCheckedSubscription = true;
+          } else if (!isSubscribed && user.hasCheckedSubscription) {
+              user.coins -= 1000; // Вычитаем монеты за отписку
+              user.hasCheckedSubscription = false;
+          }
+          await user.save();
+          res.json({ success: true, coins: user.coins, isSubscribed });
+      } else {
+          res.status(404).json({ success: false, message: 'Пользователь не найден.' });
       }
-      await user.save();
-      res.json({ success: true, coins: user.coins, isSubscribed });
-    } else {
-      res.status(404).json({ success: false, message: 'Пользователь не найден.' });
-    }
   } catch (error) {
-    console.error('Ошибка при проверке подписки:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+      console.error('Ошибка при проверке подписки:', error);
+      res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
 
