@@ -308,7 +308,7 @@ app.post('/get-coins', async (req, res) => {
     }
 
     // Добавляем заработанные монеты за рефералов к общему количеству монет пользователя
-    //const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
     const totalCoins = user.coins ;
 
     res.json({
