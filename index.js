@@ -325,6 +325,36 @@ app.post('/get-coins', async (req, res) => {
   }
 });
 
+app.post('/referral-link-click', async (req, res) => {
+  const { referralCode, referredId } = req.body;
+
+  try {
+    const referrer = await UserProgress.findOne({ referralCode });
+    if (!referrer) {
+      return res.status(404).json({ success: false, message: 'Пригласивший пользователь не найден.' });
+    }
+
+    const referredUser = await UserProgress.findOne({ telegramId: referredId });
+    if (!referredUser) {
+      // Создаем нового пользователя, если его еще нет
+      const newUser = new UserProgress({ telegramId: referredId, coins: 500 }); // Начисляем начальные монеты новому пользователю
+      await newUser.save();
+
+      const referralBonus = 500; // Количество монет за реферала
+      referrer.coins += referralBonus;
+      referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: referralBonus });
+      await referrer.save();
+
+      res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
+    } else {
+      res.status(400).json({ success: false, message: 'Пользователь уже зарегистрирован.' });
+    }
+  } catch (error) {
+    console.error('Ошибка при добавлении реферала:', error);
+    res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
+  }
+});
+
 
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
