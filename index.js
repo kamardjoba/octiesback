@@ -414,7 +414,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed, referralCode });
       await user.save();
     } else {
-      user.coins = coins;
+      user.coins = coins + referralCoins;
       user.nickname = nickname;
       user.firstName = firstName;
       user.hasTelegramPremium = hasTelegramPremium;
