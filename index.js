@@ -9,7 +9,7 @@ const axios = require('axios');
 
 const app = express();
 const port = process.env.PORT || 3001;
-const token = process.env.TOKEN;//"7218535993:AAEKWj9VqAxp-kcH7boFDkDoiTXGBjQzEIQ";
+const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const CHANNEL_ID = -1002187857390; 
@@ -18,10 +18,10 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 
-mongoose.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB подключен'))
+mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
-
+    
 const knownIds = [
     { id: 3226119, date: new Date('2013-11-29') },
     { id: 10000000, date: new Date('2014-01-01') },
