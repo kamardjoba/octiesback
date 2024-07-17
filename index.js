@@ -303,6 +303,8 @@ app.post('/get-coins', async (req, res) => {
     const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
     const firstName = chatMember.user.first_name || 'Anonymous'; // Используем first_name или задаем "Anonymous"
     const nickname = chatMember.user.username || `user_${userId}`; // Используем username или генерируем никнейм
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const totalCoins = user.coins + referralCoins;
 
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
@@ -320,9 +322,7 @@ app.post('/get-coins', async (req, res) => {
       await user.save();
     }
 
-    // Добавляем заработанные монеты за рефералов к общему количеству монет пользователя
-    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-    const totalCoins = user.coins + referralCoins;
+    
 
     res.json({
       coins: totalCoins,
