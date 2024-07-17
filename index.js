@@ -68,7 +68,6 @@ const knownIds = [
 ];
 
 const generateReferralCode = () => Math.random().toString(36).substr(2, 9);
-
 const generateTelegramLink = (referralCode) => `https://t.me/OCTIESS_BOT?start=${referralCode}`;
 
 updateUsersWithFirstNames().then(() => {
@@ -406,7 +405,8 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     const isNewUser = !user;
 
     if (isNewUser) {
-      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
+      const referralCode = generateReferralCode();
+      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed, referralCode });
       await user.save();
     } else {
       user.coins = coins;
@@ -445,6 +445,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Сервер работает на порту ${port}`);
