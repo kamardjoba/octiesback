@@ -252,8 +252,11 @@ app.post('/check-subscription-and-update', async (req, res) => {
       if (isSubscribed && !user.hasCheckedSubscription) {
         user.coins += 1000; // Добавляем награду за подписку
         user.hasCheckedSubscription = true;
-        await user.save();
+      } else if (!isSubscribed && user.hasCheckedSubscription) {
+        user.coins -= 1000; // Вычитаем монеты за отписку
+        user.hasCheckedSubscription = false;
       }
+      await user.save();
       res.json({ success: true, coins: user.coins, isSubscribed });
     } else {
       res.status(404).json({ success: false, message: 'Пользователь не найден.' });
@@ -263,6 +266,7 @@ app.post('/check-subscription-and-update', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
