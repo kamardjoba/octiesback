@@ -71,7 +71,6 @@ const generateReferralCode = () => Math.random().toString(36).substr(2, 9);
 
 const generateTelegramLink = (referralCode) => `https://t.me/OCTIESS_BOT?start=${referralCode}`;
 
-
 updateUsersWithFirstNames().then(() => {
   console.log('Все пользователи обновлены');
 }).catch(err => {
@@ -155,7 +154,6 @@ app.get('/user-count', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
-
 
 app.post('/generate-referral', async (req, res) => {
   const { userId } = req.body;
@@ -289,11 +287,15 @@ app.post('/get-coins', async (req, res) => {
 
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
+     
       const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
       user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+      const totalCoins = user.coins + referralCoins;
+      user.coins = totalCoins;
       user.nickname = nickname;
       user.firstName = firstName; // Обновляем имя
       user.hasTelegramPremium = hasTelegramPremium;
