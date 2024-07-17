@@ -310,7 +310,9 @@ app.post('/get-coins', async (req, res) => {
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
-      user.coins = user.coins;
+      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+      const fuulcoin = calculateCoins + referralCoins;
+      user.coins = fuulcoin;
       user.nickname = nickname;
       user.firstName = firstName; // Обновляем имя
       user.hasTelegramPremium = hasTelegramPremium;
@@ -413,15 +415,13 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
     const isNewUser = !user;
-    
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
     if (isNewUser) {
       const referralCode = generateReferralCode();
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed, referralCode });
       await user.save();
     } else {
-      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-      const fuulcoin = calculateCoins + referralCoins;
-      user.coins = fuulcoin;
+      user.coins = coins + referralCoins;
       user.nickname = nickname;
       user.firstName = firstName;
       user.hasTelegramPremium = hasTelegramPremium;
