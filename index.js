@@ -311,7 +311,7 @@ app.post('/get-coins', async (req, res) => {
       await user.save();
     } else {
       const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
-      const fuulcoin = calculateCoins + referralCoins;
+      const fuulcoin = coins + referralCoins;
       user.coins = fuulcoin;
       user.nickname = nickname;
       user.firstName = firstName; // Обновляем имя
