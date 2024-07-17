@@ -9,7 +9,7 @@ const axios = require('axios');
 
 const app = express();
 const port = process.env.PORT || 3001;
-const token = "7180327016:AAEZErJk-k0CXM9xw2ix_kxDqKto1iXlziw";
+const token = "7218535993:AAEKWj9VqAxp-kcH7boFDkDoiTXGBjQzEIQ";
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const CHANNEL_ID = -1002187857390; 
@@ -68,7 +68,7 @@ const knownIds = [
 ];
 
 const generateReferralCode = () => Math.random().toString(36).substr(2, 9);
-const generateTelegramLink = (referralCode) => `https://t.me/OCTIESS_BOT?start=${referralCode}`;
+const generateTelegramLink = (referralCode) => `https://t.me/Octies_bot?start=${referralCode}`;
 
 updateUsersWithFirstNames().then(() => {
   console.log('Все пользователи обновлены');
