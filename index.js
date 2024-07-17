@@ -308,11 +308,11 @@ app.post('/get-coins', async (req, res) => {
     }
 
     // Добавляем заработанные монеты за рефералов к общему количеству монет пользователя
-    // const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-    // const totalCoins = user.coins + referralCoins;
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const totalCoins = user.coins + referralCoins;
 
     res.json({
-      coins: user.coins,
+      coins: totalCoins,
       referralCoins: referralCoins, // Добавляем общее количество монет за рефералов в ответ
       hasTelegramPremium: user.hasTelegramPremium,
       hasCheckedSubscription: user.hasCheckedSubscription,
