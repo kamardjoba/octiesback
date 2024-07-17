@@ -232,7 +232,7 @@ app.post('/add-referral', async (req, res) => {
     const referralBonus = Math.floor(newUser.coins * 0.1);
     referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: referralBonus });
     referrer.coins += referralBonus;
-    //user.coins += referralBonus;
+    user.coins += referralBonus;
     await referrer.save();
 
     res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
