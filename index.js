@@ -131,8 +131,8 @@ function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, r
   const baseCoins = yearsOld * 500;
   const premiumBonus = hasTelegramPremium ? 500 : 0;
   const subscriptionBonus = isSubscribed ? 1000 : 0;
-  const referralCoins = referralCoins;
-  return baseCoins + premiumBonus + subscriptionBonus;
+  const referralCoin1 = referralCoins;
+  return baseCoins + premiumBonus + subscriptionBonus + referralCoin1;
 }
 
 async function checkTelegramPremium(userId) {
