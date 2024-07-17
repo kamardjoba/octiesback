@@ -19,7 +19,7 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 mongoose.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB connected'))
+    .then(() => console.log('MongoDB подключен'))
     .catch(err => console.log(err));
 
 const knownIds = [
@@ -437,11 +437,11 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       }
     }
 
-    //const appUrl = `https://chiharda.online/?userId=${userId}`;
+    const appUrl = `https://chiharda.online/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
-          [{ text: 'Играть', web_app: { url: `${process.env.FRONTEND_URL}?userId=${user._id}` } }]
+          [{ text: 'Играть', web_app: { url: appUrl } }]
         ]
       }
     });
