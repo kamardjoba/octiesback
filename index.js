@@ -18,10 +18,10 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
-    
+
 const knownIds = [
     { id: 3226119, date: new Date('2013-11-29') },
     { id: 10000000, date: new Date('2014-01-01') },
@@ -437,11 +437,11 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       }
     }
 
-    const appUrl = `https://chiharda.online/?userId=${userId}`;
+    //const appUrl = `https://chiharda.online/?userId=${userId}`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
-          [{ text: 'Играть', web_app: { url: appUrl } }]
+          [{ text: 'Играть', web_app: { url: `${process.env.FRONTEND_URL}?userId=${user._id}` } }]
         ]
       }
     });
