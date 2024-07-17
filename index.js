@@ -104,15 +104,6 @@ function estimateAccountCreationDate(userId) {
       return estimatedDate;
 }
 
-function calculateCoins(accountCreationDate, hasTelegramPremium) {
-  const currentYear = new Date().getFullYear();
-  const accountYear = accountCreationDate.getFullYear();
-  const yearsOld = currentYear - accountYear;
-  const baseCoins = yearsOld * 500;
-  const premiumBonus = hasTelegramPremium ? 500 : 0;
-  return baseCoins + premiumBonus;
-}
-
 async function checkChannelSubscription(telegramId) {
   try {
     const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
@@ -234,7 +225,7 @@ app.post('/add-referral', async (req, res) => {
     const referralBonus = Math.floor(newUser.coins * 0.1);
     referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: referralBonus });
     referrer.coins += referralBonus;
-    //user.coins += referralBonus;
+    user.coins += referralBonus;
     await referrer.save();
 
     res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
@@ -266,33 +257,6 @@ app.post('/check-subscription-and-update', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-
-app.post('/check-subscription-and-update', async (req, res) => {
-  const { userId } = req.body;
-
-  try {
-    const isSubscribed = await checkChannelSubscription(userId);
-    let user = await UserProgress.findOne({ telegramId: userId });
-
-    if (user) {
-      if (isSubscribed && !user.hasCheckedSubscription) {
-        user.coins += 1000; // Добавляем награду за подписку
-        user.hasCheckedSubscription = true;
-        await user.save();
-      }
-      res.json({ success: true, coins: user.coins, isSubscribed });
-    } else {
-      res.status(404).json({ success: false, message: 'Пользователь не найден.' });
-    }
-  } catch (error) {
-    console.error('Ошибка при проверке подписки:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
-  }
-});
-
-
-
-
 
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
