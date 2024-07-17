@@ -124,13 +124,14 @@ async function checkChannelSubscription(telegramId) {
   }
 }
 
-function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
+function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, referralCoins) {
   const currentYear = new Date().getFullYear();
   const accountYear = accountCreationDate.getFullYear();
   const yearsOld = currentYear - accountYear;
   const baseCoins = yearsOld * 500;
   const premiumBonus = hasTelegramPremium ? 500 : 0;
   const subscriptionBonus = isSubscribed ? 1000 : 0;
+  const referralCoins = referralCoins;
   return baseCoins + premiumBonus + subscriptionBonus;
 }
 
@@ -287,15 +288,12 @@ app.post('/get-coins', async (req, res) => {
 
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-     
-      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+      
+      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, referralCoins);
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
-      user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
-      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-      const totalCoins = user.coins + referralCoins;
-      user.coins = totalCoins;
+      user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, referralCoins);
       user.nickname = nickname;
       user.firstName = firstName; // Обновляем имя
       user.hasTelegramPremium = hasTelegramPremium;

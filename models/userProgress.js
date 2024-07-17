@@ -50,7 +50,7 @@ const UserSchema = new mongoose.Schema({
   }]
 });
 
-const UserProgress = mongoose.model('Users7', UserSchema);
+const UserProgress = mongoose.model('Users8', UserSchema);
 
 module.exports = UserProgress;
 
