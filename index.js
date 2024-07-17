@@ -420,7 +420,8 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       await user.save();
     } else {
       const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-      user.coins = coins + referralCoins;
+      const fuulcoin = calculateCoins + referralCoins;
+      user.coins = fuulcoin;
       user.nickname = nickname;
       user.firstName = firstName;
       user.hasTelegramPremium = hasTelegramPremium;
