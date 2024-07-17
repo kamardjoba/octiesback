@@ -111,6 +111,26 @@ function calculateCoins(accountCreationDate, hasTelegramPremium) {
   return baseCoins + premiumBonus;
 }
 
+async function checkChannelSubscription(telegramId) {
+  try {
+      const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+          params: {
+              chat_id: CHANNEL_ID,
+              user_id: telegramId
+          }
+      });
+
+      if (response.data.ok) {
+          const status = response.data.result.status;
+          return ['member', 'administrator', 'creator'].includes(status);
+      } else {
+          return false;
+      }
+  } catch (error) {
+      console.error('Ошибка при проверке подписки на канал:', error);
+      return false;
+  }
+}
 
 
 function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
@@ -169,7 +189,28 @@ app.post('/generate-referral', async (req, res) => {
   }
 });
 
+app.post('/check-subscription', async (req, res) => {
+  const { userId } = req.body;
 
+  try {
+    const isSubscribed = await checkChannelSubscription(userId);
+    if (isSubscribed) {
+      let user = await UserProgress.findOne({ telegramId: userId });
+      if (user) {
+        user.hasCheckedSubscription = true;
+        user.coins += 1000;  // Добавляем награду за подписку
+        await user.save();
+      } else {
+        user = new UserProgress({ telegramId: userId, coins: 1000, hasCheckedSubscription: true });
+        await user.save();
+      }
+    }
+    res.json({ isSubscribed });
+  } catch (error) {
+    console.error('Ошибка при проверке подписки:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
 
 app.post('/add-referral', async (req, res) => {
   const { referrerCode, referredId } = req.body;
@@ -201,44 +242,33 @@ app.post('/add-referral', async (req, res) => {
   }
 });
 
-const checkChannelSubscription = async (userId) => {
-  try {
-      const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
-      return chatMember.status === 'member' || chatMember.status === 'administrator' || chatMember.status === 'creator';
-  } catch (error) {
-      console.error('Ошибка при проверке подписки на канал:', error);
-      return false;
-  }
-};
-
-app.post('/check-subscription', async (req, res) => {
+app.post('/check-subscription-and-update', async (req, res) => {
   const { userId } = req.body;
   
   try {
       const isSubscribed = await checkChannelSubscription(userId);
-      
-      if (isSubscribed) {
-          let user = await UserProgress.findOne({ telegramId: userId });
-          if (!user) {
-              const accountCreationDate = estimateAccountCreationDate(userId);
-              const hasTelegramPremium = await checkTelegramPremium(userId);
-              const coins = calculateCoins(accountCreationDate, hasTelegramPremium, true);
-              user = new UserProgress({ telegramId: userId, coins, hasTelegramPremium, hasCheckedSubscription: true });
-              await user.save();
-          } else {
-              user.coins += 1000;
+      let user = await UserProgress.findOne({ telegramId: userId });
+      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+      const totalCoins = user.coins + referralCoins;
+      if (user) {
+          if (isSubscribed && !user.hasCheckedSubscription) {
+              user.coins += 1000; // Добавляем награду за подписку
               user.hasCheckedSubscription = true;
-              await user.save();
+          } else if (!isSubscribed && user.hasCheckedSubscription) {
+              user.coins -= 1000; // Вычитаем монеты за отписку
+              user.hasCheckedSubscription = false;
           }
-          return res.json({ success: true, coins: user.coins });
+          await user.save();
+          res.json({ success: true, coins: totalCoins, isSubscribed });
       } else {
-          return res.json({ success: false, message: 'Пользователь не подписан на канал' });
+          res.status(404).json({ success: false, message: 'Пользователь не найден.' });
       }
   } catch (error) {
       console.error('Ошибка при проверке подписки:', error);
       res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
