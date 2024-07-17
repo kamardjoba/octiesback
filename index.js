@@ -352,11 +352,11 @@ app.get('/leaderboard', async (req, res) => {
     const users = await UserProgress.find({});
 
     const leaderboard = users.map(user => {
-      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+      //const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
       return {
         _id: user._id,
         nickname: user.nickname,
-        coins: user.coins + referralCoins // Суммируем монеты с учетом рефералов
+        coins: user.coins //+ referralCoins // Суммируем монеты с учетом рефералов
       };
     }).sort((a, b) => b.coins - a.coins).slice(0, 50);
 
