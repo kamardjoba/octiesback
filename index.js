@@ -103,16 +103,14 @@ function estimateAccountCreationDate(userId) {
       return estimatedDate;
 }
 
-function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, referralCoins) {
+function calculateCoins(accountCreationDate, hasTelegramPremium) {
   const currentYear = new Date().getFullYear();
   const accountYear = accountCreationDate.getFullYear();
   const yearsOld = currentYear - accountYear;
   const baseCoins = yearsOld * 500;
   const premiumBonus = hasTelegramPremium ? 500 : 0;
-  const subscriptionBonus = isSubscribed ? 1000 : 0;
-  return baseCoins + premiumBonus + subscriptionBonus + referralCoins;
+  return baseCoins + premiumBonus;
 }
-
 
 async function checkChannelSubscription(telegramId) {
   try {
@@ -283,6 +281,7 @@ app.post('/get-referred-users', async (req, res) => {
   }
 });
 
+
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
   const accountCreationDate = estimateAccountCreationDate(userId);
@@ -297,13 +296,11 @@ app.post('/get-coins', async (req, res) => {
 
     let user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
-      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, 0);
+      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
-      // Добавляем заработанные монеты за рефералов
-      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-      user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed, referralCoins);
+      user.coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
       user.nickname = nickname;
       user.firstName = firstName; // Обновляем имя
       user.hasTelegramPremium = hasTelegramPremium;
@@ -311,8 +308,13 @@ app.post('/get-coins', async (req, res) => {
       await user.save();
     }
 
+    // Добавляем заработанные монеты за рефералов к общему количеству монет пользователя
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const totalCoins = user.coins + referralCoins;
+
     res.json({
-      coins: user.coins,
+      coins: totalCoins,
+      referralCoins: referralCoins, // Добавляем общее количество монет за рефералов в ответ
       hasTelegramPremium: user.hasTelegramPremium,
       hasCheckedSubscription: user.hasCheckedSubscription,
       accountCreationDate: accountCreationDate.toISOString()
@@ -407,7 +409,6 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
-      
       user.coins = coins;
       user.nickname = nickname;
       user.firstName = firstName;
