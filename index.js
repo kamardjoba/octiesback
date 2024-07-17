@@ -413,12 +413,13 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
     const isNewUser = !user;
-    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    
     if (isNewUser) {
       const referralCode = generateReferralCode();
       user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed, referralCode });
       await user.save();
     } else {
+      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
       user.coins = coins + referralCoins;
       user.nickname = nickname;
       user.firstName = firstName;
