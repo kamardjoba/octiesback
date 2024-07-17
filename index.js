@@ -211,7 +211,6 @@ app.post('/check-subscription', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-
 app.post('/add-referral', async (req, res) => {
   const { referrerCode, referredId } = req.body;
 
@@ -230,9 +229,14 @@ app.post('/add-referral', async (req, res) => {
     await newUser.save();
 
     const referralBonus = Math.floor(newUser.coins * 0.1);
+
+    // Инициализация массива referredUsers, если он не существует
+    if (!referrer.referredUsers) {
+      referrer.referredUsers = [];
+    }
+
     referrer.referredUsers.push({ nickname: `user_${referredId}`, earnedCoins: referralBonus });
     referrer.coins += referralBonus;
-    user.coins += referralBonus;
     await referrer.save();
 
     res.json({ success: true, message: 'Реферал добавлен и монеты начислены.' });
@@ -241,6 +245,7 @@ app.post('/add-referral', async (req, res) => {
     res.status(500).json({ success: false, message: 'Ошибка при добавлении реферала.' });
   }
 });
+
 
 app.post('/check-subscription-and-update', async (req, res) => {
   const { userId } = req.body;
