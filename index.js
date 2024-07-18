@@ -16,7 +16,10 @@ const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso
 const CHANNEL_ID = -1002187857390; 
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use((req, res, next) => {
+  console.log(Incoming Request: ${req.method} ${req.url});
+  next();
+});
 app.use(express.json());
 
 mongoose.connect(MONGODB_URL)
