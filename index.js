@@ -445,12 +445,17 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
 
     const appUrl = `https://chiharda.online/?userId=${userId}`;
    const channelUrl = `https://t.me/octies_channel`;
+
+   const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
+    await bot.sendPhoto(chatId, imagePath, { caption: "How cool are you, cat? Let's see it 🐱" });
+
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
           [
             { text: '🐙 Play Octies', web_app: { url: appUrl } },
-            { text: 'Join Octies OG Community', url: channelUrl }]
+            { text: 'Join Octies OG Community', url: channelUrl }
+          ]
         ]
       }
     });
