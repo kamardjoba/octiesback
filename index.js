@@ -450,7 +450,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
     
     console.log(`Sending photo from path: ${imagePath}`);
-    await bot.sendPhoto(chatId, imagePath)
+    await bot.sendPhoto(chatId, imagePath, { caption: "How cool is your Telegram profile ? Check your rating and receive rewards 🐙" })
       .then(() => {
         console.log('Photo sent successfully');
       })
@@ -459,12 +459,12 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       });
 
     console.log('Sending message with buttons');
-    bot.sendMessage(chatId, 'Запустить приложение', {
+    bot.sendMessage(chatId, '', {
       reply_markup: {
         inline_keyboard: [
           [
-            { text: '🐙 Play Octies', web_app: { url: appUrl } },
-            { text: 'Join Octies OG Community', url: channelUrl }
+            { text: "Let's Go!", web_app: { url: appUrl } },
+            { text: 'Join OCTIES Community', url: channelUrl }
           ]
         ]
       }
