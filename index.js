@@ -15,13 +15,7 @@ const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const CHANNEL_ID = -1002187857390; 
 
-
-app.use(cors({
-  origin: 'https://chiharda.online', // замени на URL твоего фронтенда
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-}));
-
+app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 
