@@ -450,7 +450,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
     
     console.log(`Sending photo from path: ${imagePath}`);
-    await bot.sendPhoto(chatId, imagePath, { caption: "How cool are you, cat? Let's see it 🐱" })
+    await bot.sendPhoto(chatId, imagePath)
       .then(() => {
         console.log('Photo sent successfully');
       })
@@ -459,7 +459,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       });
 
     console.log('Sending message with buttons');
-    bot.sendMessage(chatId, {
+    bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
           [
