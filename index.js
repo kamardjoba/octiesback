@@ -459,7 +459,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       });
 
     console.log('Sending message with buttons');
-    bot.sendMessage(chatId, 'Запустить приложение', {
+    bot.sendMessage(chatId, {
       reply_markup: {
         inline_keyboard: [
           [
