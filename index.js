@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
+const path = require('path');
 const UserProgress = require('./models/userProgress');
 const axios = require('axios');
 
