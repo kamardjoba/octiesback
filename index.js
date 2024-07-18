@@ -451,7 +451,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
           [{ text: 'Играть', web_app: { url: appUrl } }]
         ],
         inline_keyboard: [
-          [{ text: 'Играть', botURL }]
+          [{ text: 'Играть', web_app: {botURL}  }]
         ]
       }
     });
