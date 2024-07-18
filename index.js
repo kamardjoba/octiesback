@@ -449,9 +449,6 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       reply_markup: {
         inline_keyboard: [
           [{ text: 'Играть', web_app: { url: appUrl } }]
-        ],
-        inline_keyboard: [
-          [{ text: 'Играть', web_app: {url : botURL}  }]
         ]
       }
     });
