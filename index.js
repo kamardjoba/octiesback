@@ -443,12 +443,21 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       }
     }
 
-    const appUrl = `https://chiharda.online/?userId=${userId}`;
+   const appUrl = `https://chiharda.online/?userId=${userId}`;
    const channelUrl = `https://t.me/octies_channel`;
 
    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
-    await bot.sendPhoto(chatId, imagePath, { caption: "How cool are you, cat? Let's see it 🐱" });
+    
+    console.log(`Sending photo from path: ${imagePath}`);
+    await bot.sendPhoto(chatId, imagePath, { caption: "How cool are you, cat? Let's see it 🐱" })
+      .then(() => {
+        console.log('Photo sent successfully');
+      })
+      .catch((err) => {
+        console.error('Error sending photo:', err);
+      });
 
+    console.log('Sending message with buttons');
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
@@ -458,6 +467,10 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
           ]
         ]
       }
+    }).then(() => {
+      console.log('Message sent successfully');
+    }).catch((err) => {
+      console.error('Error sending message:', err);
     });
   } catch (error) {
     console.error('Ошибка при создании пользователя:', error);
