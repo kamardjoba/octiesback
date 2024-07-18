@@ -444,12 +444,13 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     }
 
     const appUrl = `https://chiharda.online/?userId=${userId}`;
-   const channelUrl = `https://t.me/Octies_bot`;
+   const channelUrl = `https://t.me/octies_channel`;
     bot.sendMessage(chatId, 'Запустить приложение', {
       reply_markup: {
         inline_keyboard: [
-          [{ text: 'Играть', web_app: { url: appUrl } }],
-          [{ text: 'Подписаться на канал', url: channelUrl }]
+          [
+            { text: '🐙 Play Octies', web_app: { url: appUrl } },
+            { text: 'Join Octies OG Community', url: channelUrl }]
         ]
       }
     });
