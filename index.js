@@ -450,7 +450,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
     
     console.log(`Sending photo from path: ${imagePath}`);
-    await bot.sendPhoto(chatId, imagePath), { caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙" }
+    await bot.sendPhoto(chatId, imagePath, { caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙" })
       .then(() => {
         console.log('Photo sent successfully');
       })
