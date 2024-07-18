@@ -89,27 +89,28 @@ async function updateUsersWithFirstNames() {
 
 function estimateAccountCreationDate(userId) {
   for (let i = 0; i < knownIds.length - 1; i++) {
-        if (userId < knownIds[i + 1].id) {
-          const idRange = knownIds[i + 1].id - knownIds[i].id;
-          const dateRange = knownIds[i + 1].date - knownIds[i].date;
-          const relativePosition = (userId - knownIds[i].id) / idRange;
-          const estimatedDate = new Date(knownIds[i].date.getTime() + relativePosition * dateRange);
-          return estimatedDate;
-        }
-      }
-      const lastKnown = knownIds[knownIds.length - 1];
-      const additionalDays = (userId - lastKnown.id) / (100000000 / 365);
-      const estimatedDate = new Date(lastKnown.date.getTime() + additionalDays * 24 * 60 * 60 * 1000);
+    if (userId < knownIds[i + 1].id) {
+      const idRange = knownIds[i + 1].id - knownIds[i].id;
+      const dateRange = knownIds[i + 1].date - knownIds[i].date;
+      const relativePosition = (userId - knownIds[i].id) / idRange;
+      const estimatedDate = new Date(knownIds[i].date.getTime() + relativePosition * dateRange);
       return estimatedDate;
+    }
+  }
+  const lastKnown = knownIds[knownIds.length - 1];
+  const additionalDays = (userId - lastKnown.id) / (100000000 / 365);
+  const estimatedDate = new Date(lastKnown.date.getTime() + additionalDays * 24 * 60 * 60 * 1000);
+  return estimatedDate;
 }
 
-function calculateCoins(accountCreationDate, hasTelegramPremium) {
-  const currentYear = new Date().getFullYear();
-  const accountYear = accountCreationDate.getFullYear();
-  const yearsOld = currentYear - accountYear;
-  const baseCoins = yearsOld * 500;
+function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
+  const currentDate = new Date();
+  const ageInMilliseconds = currentDate - accountCreationDate;
+  const ageInYears = ageInMilliseconds / (365 * 24 * 60 * 60 * 1000);
+  const baseCoins = Math.floor(ageInYears * 500);
   const premiumBonus = hasTelegramPremium ? 500 : 0;
-  return baseCoins + premiumBonus;
+  const subscriptionBonus = isSubscribed ? 1000 : 0;
+  return baseCoins + premiumBonus + subscriptionBonus;
 }
 
 async function checkChannelSubscription(telegramId) {
