@@ -444,7 +444,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       }
     }
 
-   const appUrl = `https://chiharda.online/?userId=${userId}`;
+   const appUrl = `https://bomboklad.online?userId=${userId}`;
    const channelUrl = `https://t.me/octies_channel`;
 
    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
