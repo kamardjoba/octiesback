@@ -10,7 +10,7 @@ const axios = require('axios');
 
 const app = express();
 const port = process.env.PORT || 3001;
-const token = process.env.TOKEN;
+const token =  '7291251876:AAH7r2F6kln8t6H-owdLUjs07AWErPKDufQ'; //process.env.TOKEN 
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const CHANNEL_ID = -1002187857390; 
@@ -448,7 +448,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       }
     }
 
-   const appUrl = `https://chiharda.online/?userId=${userId}`;
+   const appUrl = `https://nimble-flan-b57c97.netlify.app/?userId=${userId}`;
    const channelUrl = `https://t.me/octies_channel`;
 
    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
