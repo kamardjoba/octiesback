@@ -14,8 +14,6 @@ const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const CHANNEL_ID = -1002187857390; 
-const CHANNEL_ID_2 = -1002187857390; 
-
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -116,48 +114,35 @@ function calculateCoins(accountCreationDate, hasTelegramPremium) {
 
 async function checkChannelSubscription(telegramId) {
   try {
-      const response1 = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+      const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
           params: {
               chat_id: CHANNEL_ID,
               user_id: telegramId
           }
       });
 
-      const response2 = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
-          params: {
-              chat_id: CHANNEL_ID_2,
-              user_id: telegramId
-          }
-      });
-
-      const status1 = response1.data.result.status;
-      const status2 = response2.data.result.status;
-
-      const isSubscribedToChannel1 = ['member', 'administrator', 'creator'].includes(status1);
-      const isSubscribedToChannel2 = ['member', 'administrator', 'creator'].includes(status2);
-
-      return { isSubscribedToChannel1, isSubscribedToChannel2 };
+      if (response.data.ok) {
+          const status = response.data.result.status;
+          return ['member', 'administrator', 'creator'].includes(status);
+      } else {
+          return false;
+      }
   } catch (error) {
       console.error('Ошибка при проверке подписки на канал:', error);
-      return { isSubscribedToChannel1: false, isSubscribedToChannel2: false };
+      return false;
   }
 }
 
 
-
-function calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions) {
+function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
   const currentYear = new Date().getFullYear();
   const accountYear = accountCreationDate.getFullYear();
   const yearsOld = currentYear - accountYear;
   const baseCoins = yearsOld * 500;
   const premiumBonus = hasTelegramPremium ? 500 : 0;
-  const subscriptionBonus1 = subscriptions.isSubscribedToChannel1 ? 1000 : 0;
-  const subscriptionBonus2 = subscriptions.isSubscribedToChannel2 ? 750 : 0;
-  return baseCoins + premiumBonus + subscriptionBonus1 + subscriptionBonus2;
+  const subscriptionBonus = isSubscribed ? 1000 : 0;
+  return baseCoins + premiumBonus + subscriptionBonus;
 }
-
-
-
 
 async function checkTelegramPremium(userId) {
   try {
@@ -267,27 +252,20 @@ app.post('/check-subscription-and-update', async (req, res) => {
   const { userId } = req.body;
   
   try {
-      const subscriptions = await checkChannelSubscription(userId);
+      const isSubscribed = await checkChannelSubscription(userId);
       let user = await UserProgress.findOne({ telegramId: userId });
       const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
       const totalCoins = user.coins + referralCoins;
       if (user) {
-          if (subscriptions.isSubscribedToChannel1 && !user.hasCheckedSubscription) {
-              user.coins += 1000; // Добавляем награду за подписку на первый канал
+          if (isSubscribed && !user.hasCheckedSubscription) {
+              user.coins += 1000; // Добавляем награду за подписку
               user.hasCheckedSubscription = true;
-          } else if (!subscriptions.isSubscribedToChannel1 && user.hasCheckedSubscription) {
-              user.coins -= 1000; // Вычитаем монеты за отписку от первого канала
+          } else if (!isSubscribed && user.hasCheckedSubscription) {
+              user.coins -= 1000; // Вычитаем монеты за отписку
               user.hasCheckedSubscription = false;
           }
-          if (subscriptions.isSubscribedToChannel2 && !user.hasCheckedSubscription2) {
-              user.coins += 750; // Добавляем награду за подписку на второй канал
-              user.hasCheckedSubscription2 = true;
-          } else if (!subscriptions.isSubscribedToChannel2 && user.hasCheckedSubscription2) {
-              user.coins -= 750; // Вычитаем монеты за отписку от второго канала
-              user.hasCheckedSubscription2 = false;
-          }
           await user.save();
-          res.json({ success: true, coins: totalCoins, subscriptions });
+          res.json({ success: true, coins: totalCoins, isSubscribed });
       } else {
           res.status(404).json({ success: false, message: 'Пользователь не найден.' });
       }
@@ -296,7 +274,6 @@ app.post('/check-subscription-and-update', async (req, res) => {
       res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-
 
 
 app.post('/get-referred-users', async (req, res) => {
@@ -333,8 +310,8 @@ app.post('/get-coins', async (req, res) => {
     const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
     const totalCoins = user.coins + referralCoins;
     if (!user) {
-      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions);
-      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: subscriptions.isSubscribedToChannel1, hasCheckedSubscription2: subscriptions.isSubscribedToChannel2 });
+      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
       await user.save();
     } else {
       const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
@@ -343,8 +320,7 @@ app.post('/get-coins', async (req, res) => {
       user.nickname = nickname;
       user.firstName = firstName; // Обновляем имя
       user.hasTelegramPremium = hasTelegramPremium;
-      user.hasCheckedSubscription = subscriptions.isSubscribedToChannel1;
-      user.hasCheckedSubscription2 = subscriptions.isSubscribedToChannel2;
+      user.hasCheckedSubscription = isSubscribed;
       await user.save();
     }
 
@@ -353,7 +329,6 @@ app.post('/get-coins', async (req, res) => {
       referralCoins: referralCoins, // Добавляем общее количество монет за рефералов в ответ
       hasTelegramPremium: user.hasTelegramPremium,
       hasCheckedSubscription: user.hasCheckedSubscription,
-      hasCheckedSubscription2: user.hasCheckedSubscription2,
       accountCreationDate: accountCreationDate.toISOString()
     });
   } catch (error) {
