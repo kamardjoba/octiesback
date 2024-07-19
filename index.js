@@ -444,7 +444,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       }
     }
 
-   const appUrl = `https://6699cc628e31b10008e88e19--neon-kelpie-adfc07.netlify.app/?userId=${userId}`;
+   const appUrl = `https://bomboklad.online?userId=${userId}`;
    const channelUrl = `https://t.me/octies_channel`;
 
    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
