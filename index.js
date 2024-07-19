@@ -114,35 +114,48 @@ function calculateCoins(accountCreationDate, hasTelegramPremium) {
 
 async function checkChannelSubscription(telegramId) {
   try {
-      const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+      const response1 = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
           params: {
               chat_id: CHANNEL_ID,
               user_id: telegramId
           }
       });
 
-      if (response.data.ok) {
-          const status = response.data.result.status;
-          return ['member', 'administrator', 'creator'].includes(status);
-      } else {
-          return false;
-      }
+      const response2 = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+          params: {
+              chat_id: CHANNEL_ID_2,
+              user_id: telegramId
+          }
+      });
+
+      const status1 = response1.data.result.status;
+      const status2 = response2.data.result.status;
+
+      const isSubscribedToChannel1 = ['member', 'administrator', 'creator'].includes(status1);
+      const isSubscribedToChannel2 = ['member', 'administrator', 'creator'].includes(status2);
+
+      return { isSubscribedToChannel1, isSubscribedToChannel2 };
   } catch (error) {
       console.error('Ошибка при проверке подписки на канал:', error);
-      return false;
+      return { isSubscribedToChannel1: false, isSubscribedToChannel2: false };
   }
 }
 
 
-function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
+
+function calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions) {
   const currentYear = new Date().getFullYear();
   const accountYear = accountCreationDate.getFullYear();
   const yearsOld = currentYear - accountYear;
   const baseCoins = yearsOld * 500;
   const premiumBonus = hasTelegramPremium ? 500 : 0;
-  const subscriptionBonus = isSubscribed ? 1000 : 0;
-  return baseCoins + premiumBonus + subscriptionBonus;
+  const subscriptionBonus1 = subscriptions.isSubscribedToChannel1 ? 1000 : 0;
+  const subscriptionBonus2 = subscriptions.isSubscribedToChannel2 ? 750 : 0;
+  return baseCoins + premiumBonus + subscriptionBonus1 + subscriptionBonus2;
 }
+
+
+
 
 async function checkTelegramPremium(userId) {
   try {
@@ -252,20 +265,27 @@ app.post('/check-subscription-and-update', async (req, res) => {
   const { userId } = req.body;
   
   try {
-      const isSubscribed = await checkChannelSubscription(userId);
+      const subscriptions = await checkChannelSubscription(userId);
       let user = await UserProgress.findOne({ telegramId: userId });
       const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
       const totalCoins = user.coins + referralCoins;
       if (user) {
-          if (isSubscribed && !user.hasCheckedSubscription) {
-              user.coins += 1000; // Добавляем награду за подписку
+          if (subscriptions.isSubscribedToChannel1 && !user.hasCheckedSubscription) {
+              user.coins += 1000; // Добавляем награду за подписку на первый канал
               user.hasCheckedSubscription = true;
-          } else if (!isSubscribed && user.hasCheckedSubscription) {
-              user.coins -= 1000; // Вычитаем монеты за отписку
+          } else if (!subscriptions.isSubscribedToChannel1 && user.hasCheckedSubscription) {
+              user.coins -= 1000; // Вычитаем монеты за отписку от первого канала
               user.hasCheckedSubscription = false;
           }
+          if (subscriptions.isSubscribedToChannel2 && !user.hasCheckedSubscription2) {
+              user.coins += 750; // Добавляем награду за подписку на второй канал
+              user.hasCheckedSubscription2 = true;
+          } else if (!subscriptions.isSubscribedToChannel2 && user.hasCheckedSubscription2) {
+              user.coins -= 750; // Вычитаем монеты за отписку от второго канала
+              user.hasCheckedSubscription2 = false;
+          }
           await user.save();
-          res.json({ success: true, coins: totalCoins, isSubscribed });
+          res.json({ success: true, coins: totalCoins, subscriptions });
       } else {
           res.status(404).json({ success: false, message: 'Пользователь не найден.' });
       }
@@ -274,6 +294,7 @@ app.post('/check-subscription-and-update', async (req, res) => {
       res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 
 app.post('/get-referred-users', async (req, res) => {
@@ -310,8 +331,8 @@ app.post('/get-coins', async (req, res) => {
     const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
     const totalCoins = user.coins + referralCoins;
     if (!user) {
-      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
-      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
+      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions);
+      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: subscriptions.isSubscribedToChannel1, hasCheckedSubscription2: subscriptions.isSubscribedToChannel2 });
       await user.save();
     } else {
       const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
@@ -320,7 +341,8 @@ app.post('/get-coins', async (req, res) => {
       user.nickname = nickname;
       user.firstName = firstName; // Обновляем имя
       user.hasTelegramPremium = hasTelegramPremium;
-      user.hasCheckedSubscription = isSubscribed;
+      user.hasCheckedSubscription = subscriptions.isSubscribedToChannel1;
+      user.hasCheckedSubscription2 = subscriptions.isSubscribedToChannel2;
       await user.save();
     }
 
@@ -329,6 +351,7 @@ app.post('/get-coins', async (req, res) => {
       referralCoins: referralCoins, // Добавляем общее количество монет за рефералов в ответ
       hasTelegramPremium: user.hasTelegramPremium,
       hasCheckedSubscription: user.hasCheckedSubscription,
+      hasCheckedSubscription2: user.hasCheckedSubscription2,
       accountCreationDate: accountCreationDate.toISOString()
     });
   } catch (error) {
@@ -444,32 +467,39 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       }
     }
 
-   const appUrl = `https://bomboklad.online?userId=${userId}`;
+   const appUrl = `https://chiharda.online/?userId=${userId}`;
    const channelUrl = `https://t.me/octies_channel`;
 
    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
     
-   console.log(`Sending photo from path: ${imagePath}`);
-   await bot.sendPhoto(chatId, imagePath, {
-     caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙",
-     reply_markup: {
-       inline_keyboard: [
-         [
-           { text: "Let's Go!", web_app: { url: appUrl } },
-           { text: 'Join OCTIES Community', url: channelUrl }
-         ]
-       ]
-     }
-   }).then(() => {
-     console.log('Photo and buttons sent successfully');
-   }).catch((err) => {
-     console.error('Error sending photo and buttons:', err);
-   });
+    console.log(`Sending photo from path: ${imagePath}`);
+    await bot.sendPhoto(chatId, imagePath, { caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙" })
+      .then(() => {
+        console.log('Photo sent successfully');
+      })
+      .catch((err) => {
+        console.error('Error sending photo:', err);
+      });
 
- } catch (error) {
-   console.error('Ошибка при создании пользователя:', error);
-   bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
- }
+    console.log('Sending message with buttons');
+    bot.sendMessage(chatId, ' ', {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "Let's Go!", web_app: { url: appUrl } },
+            { text: 'Join OCTIES Community', url: channelUrl }
+          ]
+        ]
+      }
+    }).then(() => {
+      console.log('Message sent successfully');
+    }).catch((err) => {
+      console.error('Error sending message:', err);
+    });
+  } catch (error) {
+    console.error('Ошибка при создании пользователя:', error);
+    bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
+  }
 });
 
 

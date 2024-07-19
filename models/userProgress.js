@@ -37,6 +37,11 @@ const UserSchema = new mongoose.Schema({
      default: false
   },
 
+  hasCheckedSubscription2:
+  { type: Boolean,
+     default: false
+  },
+
   referralCode:
   { 
     type: String,
