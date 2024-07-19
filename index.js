@@ -449,34 +449,27 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
 
    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
     
-    console.log(`Sending photo from path: ${imagePath}`);
-    await bot.sendPhoto(chatId, imagePath, { caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙" })
-      .then(() => {
-        console.log('Photo sent successfully');
-      })
-      .catch((err) => {
-        console.error('Error sending photo:', err);
-      });
+   console.log(`Sending photo from path: ${imagePath}`);
+   await bot.sendPhoto(chatId, imagePath, {
+     caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙",
+     reply_markup: {
+       inline_keyboard: [
+         [
+           { text: "Let's Go!", web_app: { url: appUrl } },
+           { text: 'Join OCTIES Community', url: channelUrl }
+         ]
+       ]
+     }
+   }).then(() => {
+     console.log('Photo and buttons sent successfully');
+   }).catch((err) => {
+     console.error('Error sending photo and buttons:', err);
+   });
 
-    console.log('Sending message with buttons');
-    bot.sendMessage(chatId, ' ', {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: "Let's Go!", web_app: { url: appUrl } },
-            { text: 'Join OCTIES Community', url: channelUrl }
-          ]
-        ]
-      }
-    }).then(() => {
-      console.log('Message sent successfully');
-    }).catch((err) => {
-      console.error('Error sending message:', err);
-    });
-  } catch (error) {
-    console.error('Ошибка при создании пользователя:', error);
-    bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
-  }
+ } catch (error) {
+   console.error('Ошибка при создании пользователя:', error);
+   bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
+ }
 });
 
 
