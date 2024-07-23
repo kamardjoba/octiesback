@@ -199,9 +199,9 @@ app.post('/check-subscription', async (req, res) => {
     const subscriptions = await checkChannelSubscription(userId);
     let user = await UserProgress.findOne({ telegramId: userId });
     if (user) {
-      if (subscriptions.isSubscribedToChannel1 && !user.hasCheckedSubscription) {
+      if (subscriptions.isSubscribedToChannel1 && !user.hasCheckedSubscription1) {
         user.coins += 1000; // Добавляем награду за подписку на первый канал
-        user.hasCheckedSubscription = true;
+        user.hasCheckedSubscription1 = true;
       }
       if (subscriptions.isSubscribedToChannel2 && !user.hasCheckedSubscription2) {
         user.coins += 750; // Добавляем награду за подписку на второй канал
@@ -209,7 +209,12 @@ app.post('/check-subscription', async (req, res) => {
       }
       await user.save();
     } else {
-      user = new UserProgress({ telegramId: userId, coins: 1000, hasCheckedSubscription: subscriptions.isSubscribedToChannel1, hasCheckedSubscription2: subscriptions.isSubscribedToChannel2 });
+      user = new UserProgress({
+        telegramId: userId,
+        coins: 1000,
+        hasCheckedSubscription1: subscriptions.isSubscribedToChannel1,
+        hasCheckedSubscription2: subscriptions.isSubscribedToChannel2,
+      });
       await user.save();
     }
     res.json({ subscriptions });
@@ -218,6 +223,7 @@ app.post('/check-subscription', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 app.post('/add-referral', async (req, res) => {
   const { referrerCode, referredId } = req.body;
