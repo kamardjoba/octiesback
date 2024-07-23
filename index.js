@@ -16,6 +16,8 @@ const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso
 const CHANNEL_ID = -1002187857390;
 const CHANNEL_ID_2 = -1002088709942;  
 
+const userStates = {};
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
