@@ -293,6 +293,7 @@ app.post('/get-referred-users', async (req, res) => {
 });
 
 
+
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
   const accountCreationDate = estimateAccountCreationDate(userId);
@@ -399,6 +400,95 @@ app.get('/get-user-data', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
+async function sendMessageToAllUsers(message, buttonText, buttonUrl, buttonType) {
+  try {
+    const users = await UserProgress.find({}, 'telegramId');
+
+    const promises = users.map(user => {
+      if (message.text) {
+        if (buttonText && buttonUrl) {
+          const replyMarkup = buttonType === 'web_app' ? 
+            { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
+            { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+
+          return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
+        } else {
+          return bot.sendMessage(user.telegramId, message.text);
+        }
+      } else if (message.photo) {
+        const photo = message.photo[message.photo.length - 1].file_id;
+        const caption = message.caption || '';
+        if (buttonText && buttonUrl) {
+          const replyMarkup = buttonType === 'web_app' ? 
+            { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
+            { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+
+          return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
+        } else {
+          return bot.sendPhoto(user.telegramId, photo, { caption });
+        }
+      }
+    });
+
+    await Promise.all(promises);
+  } catch (error) {
+    console.error('Ошибка при отправке сообщений:', error);
+  }
+}
+
+
+const ADMIN_IDS = [561009411]; // Замени на реальные Telegram ID администраторов
+
+bot.onText(/\/broadcast/, (msg) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+
+  if (!ADMIN_IDS.includes(userId)) {
+    return bot.sendMessage(chatId, 'У вас нет прав для использования этой команды.');
+  }
+
+  userStates[userId] = { state: 'awaiting_message' };
+  bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
+});
+
+
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+
+  if (userStates[userId] && userStates[userId].state === 'awaiting_message') {
+    userStates[userId].message = msg;
+    userStates[userId].state = 'awaiting_button_choice';
+
+    bot.sendMessage(chatId, 'Вы хотите добавить инлайн кнопку? Отправьте "да" или "нет".');
+  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_choice') {
+    if (msg.text.toLowerCase() === 'да') {
+      userStates[userId].state = 'awaiting_button_text';
+      bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для инлайн кнопки.');
+    } else {
+      await sendMessageToAllUsers(userStates[userId].message);
+      delete userStates[userId];
+      bot.sendMessage(chatId, 'Сообщение успешно отправлено всем пользователям.');
+    }
+  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text') {
+    userStates[userId].buttonText = msg.text;
+    userStates[userId].state = 'awaiting_button_url';
+    bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для инлайн кнопки.');
+  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url') {
+    userStates[userId].buttonUrl = msg.text;
+    userStates[userId].state = 'awaiting_button_type';
+    bot.sendMessage(chatId, 'Какого типа будет кнопка? Отправьте "web_app" или "url".');
+  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type') {
+    userStates[userId].buttonType = msg.text.toLowerCase();
+
+    await sendMessageToAllUsers(userStates[userId].message, userStates[userId].buttonText, userStates[userId].buttonUrl, userStates[userId].buttonType);
+    delete userStates[userId];
+    bot.sendMessage(chatId, 'Сообщение с инлайн кнопкой успешно отправлено всем пользователям.');
+  }
+});
+
+
 
 bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
   const chatId = msg.chat.id;
