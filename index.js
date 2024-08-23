@@ -664,45 +664,33 @@ app.post('/add-coins', async (req, res) => {
 async function sendMessageToAllUsers(message, buttonText, buttonUrl, buttonType) {
   try {
       const users = await UserProgress.find({}, 'telegramId');
-
+      
       const promises = users.map(user => {
-          if (message.text) {
-              // Отправка текстового сообщения
-              if (buttonText && buttonUrl) {
-                  const replyMarkup = buttonType === 'web_app' ? 
-                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
-                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+          // Формируем уникальную ссылку для каждого пользователя
+          const personalizedUrl = `${buttonUrl}?userId=${user.telegramId}`;
 
-                  return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
-              } else {
-                  return bot.sendMessage(user.telegramId, message.text);
-              }
+          if (message.text) {
+              const replyMarkup = buttonType === 'web_app' ? 
+                  { inline_keyboard: [[{ text: buttonText, web_app: { url: personalizedUrl } }]] } : 
+                  { inline_keyboard: [[{ text: buttonText, url: personalizedUrl }]] };
+
+              return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
           } else if (message.photo) {
-              // Отправка фото
               const photo = message.photo[message.photo.length - 1].file_id;
               const caption = message.caption || '';
-              if (buttonText && buttonUrl) {
-                  const replyMarkup = buttonType === 'web_app' ? 
-                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
-                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+              const replyMarkup = buttonType === 'web_app' ? 
+                  { inline_keyboard: [[{ text: buttonText, web_app: { url: personalizedUrl } }]] } : 
+                  { inline_keyboard: [[{ text: buttonText, url: personalizedUrl }]] };
 
-                  return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
-              } else {
-                  return bot.sendPhoto(user.telegramId, photo, { caption });
-              }
+              return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
           } else if (message.video) {
-              // Отправка видео
               const video = message.video.file_id;
               const caption = message.caption || '';
-              if (buttonText && buttonUrl) {
-                  const replyMarkup = buttonType === 'web_app' ? 
-                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
-                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+              const replyMarkup = buttonType === 'web_app' ? 
+                  { inline_keyboard: [[{ text: buttonText, web_app: { url: personalizedUrl } }]] } : 
+                  { inline_keyboard: [[{ text: buttonText, url: personalizedUrl }]] };
 
-                  return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
-              } else {
-                  return bot.sendVideo(user.telegramId, video, { caption });
-              }
+              return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
           }
       });
 
@@ -711,6 +699,7 @@ async function sendMessageToAllUsers(message, buttonText, buttonUrl, buttonType)
       console.error('Ошибка при отправке сообщений:', error);
   }
 }
+
 
 const ADMIN_IDS = [561009411]; // Замени на реальные Telegram ID администраторов
 
