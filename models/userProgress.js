@@ -20,11 +20,23 @@ const UserSchema = new mongoose.Schema({
      required: true 
   },
 
+  hasNicknameBonus: 
+  {
+    type: Boolean, 
+    default: false
+  },
+
   coins:
   { 
     type: Number, 
     default: 0 
   },
+  coinsSub:
+  { 
+    type: Number, 
+    default: 0 
+  },
+
 
   hasTelegramPremium:
   { 
@@ -42,6 +54,28 @@ const UserSchema = new mongoose.Schema({
      default: false
   },
 
+  hasCheckedSubscription3:
+  { type: Boolean,
+     default: false
+  },
+
+  hasCheckedSubscription4:
+  { type: Boolean,
+     default: false
+  },
+
+  hasReceivedTwitterReward:
+  {
+     type: Boolean, 
+     default: false
+    
+  },
+
+  transactionNumber: { 
+    type: Number, 
+    default: 0 
+  },
+
   referralCode:
   { 
     type: String,
@@ -55,7 +89,7 @@ const UserSchema = new mongoose.Schema({
   }]
 });
 
-const UserProgress = mongoose.model('UsersUspech', UserSchema);
+const UserProgress = mongoose.model('Testforeveryone', UserSchema);
 
 module.exports = UserProgress;
 

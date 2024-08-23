@@ -1,29 +1,34 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
-require('dotenv').config();
 const path = require('path');
 const UserProgress = require('./models/userProgress');
+//const GlobalTransactionCounter = require('./models/GlobalTransactionCounter');
 const axios = require('axios');
-
+MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const app = express();
 const port = process.env.PORT || 3001;
 const token = process.env.TOKEN;
-const bot = new TelegramBot(token, { polling: true });
-const MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const CHANNEL_ID = -1002187857390; 
+const CHANNEL_ID_2 =-1002246870197;
+const CHANNEL_ID_3 = -1002088709942; 
+const CHANNEL_ID_4 = -1002241923161; 
+
+const userStates = {};
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 
-mongoose.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB подключен'))
+
+mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
 
-const knownIds = [
+const knownIds = [ 
     { id: 3226119, date: new Date('2013-11-29') },
     { id: 10000000, date: new Date('2014-01-01') },
     { id: 22616448, date: new Date('2014-02-25') },
@@ -66,10 +71,10 @@ const knownIds = [
     { id: 6984356782, date: new Date('2024-01-01') },
     { id: 7266007926, date: new Date('2024-07-13') },
 
-];
+ ];
 
 const generateReferralCode = () => Math.random().toString(36).substr(2, 9);
-const generateTelegramLink = (referralCode) => `https://t.me/Octies_bot?start=${referralCode}`;
+const generateTelegramLink = (referralCode) => `https://t.me/test_for_everyone_bot?start=${referralCode}`;
 
 updateUsersWithFirstNames().then(() => {
   console.log('Все пользователи обновлены');
@@ -89,71 +94,146 @@ async function updateUsersWithFirstNames() {
 
 function estimateAccountCreationDate(userId) {
   for (let i = 0; i < knownIds.length - 1; i++) {
-        if (userId < knownIds[i + 1].id) {
-          const idRange = knownIds[i + 1].id - knownIds[i].id;
-          const dateRange = knownIds[i + 1].date - knownIds[i].date;
-          const relativePosition = (userId - knownIds[i].id) / idRange;
-          const estimatedDate = new Date(knownIds[i].date.getTime() + relativePosition * dateRange);
-          return estimatedDate;
-        }
-      }
-      const lastKnown = knownIds[knownIds.length - 1];
-      const additionalDays = (userId - lastKnown.id) / (100000000 / 365);
-      const estimatedDate = new Date(lastKnown.date.getTime() + additionalDays * 24 * 60 * 60 * 1000);
+    if (userId < knownIds[i + 1].id) {
+      const idRange = knownIds[i + 1].id - knownIds[i].id;
+      const dateRange = knownIds[i + 1].date - knownIds[i].date;
+      const relativePosition = (userId - knownIds[i].id) / idRange;
+      const estimatedDate = new Date(knownIds[i].date.getTime() + relativePosition * dateRange);
       return estimatedDate;
+    }
+  }
+  const lastKnown = knownIds[knownIds.length - 1];
+  const additionalDays = (userId - lastKnown.id) / (100000000 / 365);
+  const estimatedDate = new Date(lastKnown.date.getTime() + additionalDays * 24 * 60 * 60 * 1000);
+  return estimatedDate;
 }
 
-function calculateCoins(accountCreationDate, hasTelegramPremium) {
-  const currentYear = new Date().getFullYear();
-  const accountYear = accountCreationDate.getFullYear();
-  const yearsOld = currentYear - accountYear;
-  const baseCoins = yearsOld * 500;
-  const premiumBonus = hasTelegramPremium ? 500 : 0;
-  return baseCoins + premiumBonus;
-}
-
+function calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions) {
+    const currentDate = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(currentDate.getFullYear() - 1);
+  
+    // Проверяем, если аккаунт был создан менее года назад
+    if (accountCreationDate > oneYearAgo) {
+      return 300;
+    }
+  
+    const currentYear = currentDate.getFullYear();
+    const accountYear = accountCreationDate.getFullYear();
+    const yearsOld = currentYear - accountYear;
+    const baseCoins = yearsOld * 500;
+    const premiumBonus = hasTelegramPremium ? 500 : 0;
+    const subscriptionBonus1 = subscriptions.isSubscribedToChannel1 ? 1000 : 0;
+    const subscriptionBonus2 = subscriptions.isSubscribedToChannel2 ? 750 : 0;
+    const subscriptionBonus3 = subscriptions.isSubscribedToChannel3 ? 750 : 0;
+    const subscriptionBonus4 = subscriptions.isSubscribedToChannel4 ? 750 : 0;
+   
+    return baseCoins + premiumBonus + subscriptionBonus1 + subscriptionBonus2 + subscriptionBonus3 + subscriptionBonus4;
+  }
+  
 async function checkChannelSubscription(telegramId) {
   try {
-      const response = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
-          params: {
-              chat_id: CHANNEL_ID,
-              user_id: telegramId
-          }
+    const response1 = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+      params: {
+        chat_id: CHANNEL_ID,
+        user_id: telegramId
+      }
+    });
+
+    const response2 = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+      params: {
+        chat_id: CHANNEL_ID_2,
+        user_id: telegramId
+      }
+    });
+
+    const response3 = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+        params: {
+          chat_id: CHANNEL_ID_3,
+          user_id: telegramId
+        }
+    });
+
+    const response4 = await axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
+        params: {
+          chat_id: CHANNEL_ID_4,
+          user_id: telegramId
+        }
       });
 
-      if (response.data.ok) {
-          const status = response.data.result.status;
-          return ['member', 'administrator', 'creator'].includes(status);
-      } else {
-          return false;
-      }
+
+    const status1 = response1.data.result.status;
+    const status2 = response2.data.result.status;
+    const status3 = response3.data.result.status;
+    const status4 = response4.data.result.status;
+
+    const isSubscribedToChannel1 = ['member', 'administrator', 'creator'].includes(status1);
+    const isSubscribedToChannel2 = ['member', 'administrator', 'creator'].includes(status2);
+    const isSubscribedToChannel3 = ['member', 'administrator', 'creator'].includes(status3);
+    const isSubscribedToChannel4 = ['member', 'administrator', 'creator'].includes(status4);
+
+    return { isSubscribedToChannel1, isSubscribedToChannel2, isSubscribedToChannel3, isSubscribedToChannel4 };
   } catch (error) {
-      console.error('Ошибка при проверке подписки на канал:', error);
-      return false;
+    console.error('Ошибка при проверке подписки на канал:', error);
+    return { isSubscribedToChannel1: false, isSubscribedToChannel2: false, isSubscribedToChannel3: false, isSubscribedToChannel4: false };
   }
-}
-
-
-function calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed) {
-  const currentYear = new Date().getFullYear();
-  const accountYear = accountCreationDate.getFullYear();
-  const yearsOld = currentYear - accountYear;
-  const baseCoins = yearsOld * 500;
-  const premiumBonus = hasTelegramPremium ? 500 : 0;
-  const subscriptionBonus = isSubscribed ? 1000 : 0;
-  return baseCoins + premiumBonus + subscriptionBonus;
 }
 
 async function checkTelegramPremium(userId) {
   try {
     const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
-    console.log('chatMember:', chatMember); // Логируем результат
+    console.log('chatMember:', chatMember);
     return chatMember.user.is_premium;
   } catch (error) {
     console.error('Ошибка при проверке Telegram Premium:', error);
-    return false; // Предположим, что у пользователя нет премиум, если произошла ошибка
+    return false;
   }
 }
+
+
+// Функция для проверки никнейма и награды
+const checkNicknameAndReward = async (userId) => {
+    try {
+        const user = await UserProgress.findOne({ telegramId: userId });
+
+        if (!user) {
+            console.log('Пользователь не найден.');
+            return;
+        }
+
+        // Проверяем, был ли бонус уже обработан во время текущего запроса
+        if (user.processingNicknameBonus) {
+            console.log('Бонус за никнейм уже обрабатывается.');
+            return;
+        }
+
+        // Устанавливаем флаг, что бонус обрабатывается
+        user.processingNicknameBonus = true;
+        await user.save();
+
+        const hasOctiesInNickname = user.firstName.includes('octies');
+
+        if (hasOctiesInNickname && !user.hasNicknameBonus) {
+            // Пользователь еще не получил бонус и у него есть "octies" в нике
+            user.coins += 300;
+            user.hasNicknameBonus = true;
+            console.log(`Пользователю ${user.firstName} начислено 569 монет за ник с "octies".`);
+        } else if (!hasOctiesInNickname && user.hasNicknameBonus) {
+            // Пользователь удалил "octies" из ника, но ранее получил бонус
+            user.coins -= 300;
+            user.hasNicknameBonus = false;
+            console.log(`Пользователю ${user.firstName} снято 569 монет за удаление "octies" из ника.`);
+        } else {
+            console.log(`Нет изменений в нике или бонус уже был обработан.`);
+        }
+
+        // Сбрасываем флаг после завершения обработки
+        user.processingNicknameBonus = false;
+        await user.save();
+    } catch (error) {
+        console.error('Ошибка при проверке ника и обработке монет:', error);
+    }
+};
 
 app.get('/user-count', async (req, res) => {
   try {
@@ -194,24 +274,87 @@ app.post('/check-subscription', async (req, res) => {
   const { userId } = req.body;
 
   try {
-    const isSubscribed = await checkChannelSubscription(userId);
-    if (isSubscribed) {
-      let user = await UserProgress.findOne({ telegramId: userId });
-      if (user) {
+    const subscriptions = await checkChannelSubscription(userId);
+    let user = await UserProgress.findOne({ telegramId: userId });
+    if (user) {
+      if (subscriptions.isSubscribedToChannel1 && !user.hasCheckedSubscription) {
+        user.coins += 1000; // Добавляем награду за подписку на первый канал
+  
         user.hasCheckedSubscription = true;
-        user.coins += 1000;  // Добавляем награду за подписку
-        await user.save();
-      } else {
-        user = new UserProgress({ telegramId: userId, coins: 1000, hasCheckedSubscription: true });
-        await user.save();
       }
+      if (subscriptions.isSubscribedToChannel2 && !user.hasCheckedSubscription2) {
+        user.coins += 750; // Добавляем награду за подписку на второй канал
+        user.hasCheckedSubscription2 = true;
+      }
+      if (subscriptions.isSubscribedToChannel3 && !user.hasCheckedSubscription3) {
+        user.coins += 750; // Добавляем награду за подписку на второй канал
+        user.hasCheckedSubscription3 = true;
+      }
+      if (subscriptions.isSubscribedToChannel4 && !user.hasCheckedSubscription4) {
+        user.coins += 750; // Добавляем награду за подписку на второй канал
+        user.hasCheckedSubscription4 = true;
+      }
+      await user.save();
+    } else {
+      user = new UserProgress({ telegramId: userId, coins: 1000, hasCheckedSubscription: subscriptions.isSubscribedToChannel1, hasCheckedSubscription2: subscriptions.isSubscribedToChannel2, hasCheckedSubscription3: subscriptions.isSubscribedToChannel3, hasCheckedSubscription4: subscriptions.isSubscribedToChannel4 });
+      await user.save();
     }
-    res.json({ isSubscribed });
+    res.json({ subscriptions });
   } catch (error) {
     console.error('Ошибка при проверке подписки:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
+
+
+app.post('/record-transaction', async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+      // Находим пользователя по его ID
+      let user = await UserProgress.findOne({ telegramId: userId });
+      
+      if (!user) {
+          return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+      }
+
+      // Увеличиваем счетчик транзакций у всех пользователей
+      await UserProgress.updateMany({}, { $inc: { transactionNumber: 1 } });
+
+      // Устанавливаем текущему пользователю transactionNumber равный 1
+      user.transactionNumber = 1;
+
+      // Сохраняем изменения в базе данных
+      await user.save();
+
+      // Возвращаем номер транзакции
+      res.json({ success: true, transactionNumber: user.transactionNumber });
+  } catch (error) {
+      console.error('Ошибка при записи транзакции:', error);
+      res.status(500).json({ success: false, message: 'Ошибка при записи транзакции.' });
+  }
+});
+
+
+
+app.post('/get-referral-count', async (req, res) => {
+    const { userId } = req.body;
+
+    try {
+        const user = await UserProgress.findOne({ telegramId: userId });
+
+        if (user) {
+            const referralCount = user.referredUsers.length;
+            res.status(200).json({ referralCount });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+});
+
 app.post('/add-referral', async (req, res) => {
   const { referrerCode, referredId } = req.body;
 
@@ -231,7 +374,6 @@ app.post('/add-referral', async (req, res) => {
 
     const referralBonus = Math.floor(newUser.coins * 0.1);
 
-    // Инициализация массива referredUsers, если он не существует
     if (!referrer.referredUsers) {
       referrer.referredUsers = [];
     }
@@ -247,34 +389,111 @@ app.post('/add-referral', async (req, res) => {
   }
 });
 
+app.post('/update-coins', async (req, res) => {
+  const { userId, amount } = req.body;
 
-app.post('/check-subscription-and-update', async (req, res) => {
-  const { userId } = req.body;
-  
   try {
-      const isSubscribed = await checkChannelSubscription(userId);
       let user = await UserProgress.findOne({ telegramId: userId });
-      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-      const totalCoins = user.coins + referralCoins;
       if (user) {
-          if (isSubscribed && !user.hasCheckedSubscription) {
-              user.coins += 1000; // Добавляем награду за подписку
-              user.hasCheckedSubscription = true;
-          } else if (!isSubscribed && user.hasCheckedSubscription) {
-              user.coins -= 1000; // Вычитаем монеты за отписку
-              user.hasCheckedSubscription = false;
+          user.coins += amount;
+
+          // Установите флаг hasReceivedTwitterReward в true, если пользователь получил награду
+          if (amount === 500) {
+              user.hasReceivedTwitterReward = true;
           }
+
           await user.save();
-          res.json({ success: true, coins: totalCoins, isSubscribed });
+          res.json({ success: true, coins: user.coins, hasReceivedTwitterReward: user.hasReceivedTwitterReward });
       } else {
           res.status(404).json({ success: false, message: 'Пользователь не найден.' });
       }
   } catch (error) {
-      console.error('Ошибка при проверке подписки:', error);
-      res.status(500).json({ error: 'Ошибка сервера' });
+      console.error('Ошибка при обновлении монет:', error);
+      res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
 
+
+
+app.post('/check-subscription-and-update', async (req, res) => {
+    const { userId } = req.body;
+
+    try {
+        const subscriptions = await checkChannelSubscription(userId);
+        let user = await UserProgress.findOne({ telegramId: userId });
+
+        if (user) {
+            let updatedCoins = user.coins;
+            let updatedCoinsSub = user.coinsSub;
+
+            await checkNicknameAndReward(userId);
+
+            // Проверка подписки на первый канал
+            if (subscriptions.isSubscribedToChannel1 && !user.hasCheckedSubscription) {
+                updatedCoins += 1000; // Добавляем награду за подписку на первый канал
+                updatedCoinsSub += 1000; // Сохраняем монеты за подписку в отдельное поле
+                user.hasCheckedSubscription = true;
+            } else if (!subscriptions.isSubscribedToChannel1 && user.hasCheckedSubscription) {
+                updatedCoins -= 1000; // Вычитаем монеты за отписку от первого канала
+                updatedCoinsSub -= 1000; // Вычитаем монеты за отписку в отдельное поле
+                user.hasCheckedSubscription = false;
+            }
+
+            // Проверка подписки на второй канал
+            if (subscriptions.isSubscribedToChannel2 && !user.hasCheckedSubscription2) {
+                updatedCoins += 750; // Добавляем награду за подписку на второй канал
+                updatedCoinsSub += 750; // Сохраняем монеты за подписку в отдельное поле
+                user.hasCheckedSubscription2 = true;
+            } else if (!subscriptions.isSubscribedToChannel2 && user.hasCheckedSubscription2) {
+                updatedCoins -= 750; // Вычитаем монеты за отписку от второго канала
+                updatedCoinsSub -= 750; // Вычитаем монеты за отписку в отдельное поле
+                user.hasCheckedSubscription2 = false;
+            }
+
+            // Проверка подписки на третий канал
+            if (subscriptions.isSubscribedToChannel3 && !user.hasCheckedSubscription3) {
+                updatedCoins += 750; // Добавляем награду за подписку на третий канал
+                updatedCoinsSub += 750; // Сохраняем монеты за подписку в отдельное поле
+                user.hasCheckedSubscription3 = true;
+            } else if (!subscriptions.isSubscribedToChannel3 && user.hasCheckedSubscription3) {
+                updatedCoins -= 750; // Вычитаем монеты за отписку от третьего канала
+                updatedCoinsSub -= 750; // Вычитаем монеты за отписку в отдельное поле
+                user.hasCheckedSubscription3 = false;
+            }
+
+            // Проверка подписки на четвертый канал
+            if (subscriptions.isSubscribedToChannel4 && !user.hasCheckedSubscription4) {
+                updatedCoins += 750; // Добавляем награду за подписку на четвертый канал
+                updatedCoinsSub += 750; // Сохраняем монеты за подписку в отдельное поле
+                user.hasCheckedSubscription4 = true;
+            } else if (!subscriptions.isSubscribedToChannel4 && user.hasCheckedSubscription4) {
+                updatedCoins -= 750; // Вычитаем монеты за отписку от четвертого канала
+                updatedCoinsSub -= 750; // Вычитаем монеты за отписку в отдельное поле
+                user.hasCheckedSubscription4 = false;
+            }
+          
+            user.coins = updatedCoins;
+            user.coinsSub = updatedCoinsSub;
+            await user.save();
+
+            res.json({
+                success: true,
+                coins: updatedCoins,
+                coinsSub: updatedCoinsSub,
+                hasCheckedSubscription: user.hasCheckedSubscription,
+                hasCheckedSubscription2: user.hasCheckedSubscription2,
+                hasCheckedSubscription3: user.hasCheckedSubscription3,
+                hasCheckedSubscription4: user.hasCheckedSubscription4,
+                hasNicknameBonus: user.hasNicknameBonus
+            });
+        } else {
+            res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+        }
+    } catch (error) {
+        console.error('Ошибка при проверке подписки:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
 
 app.post('/get-referred-users', async (req, res) => {
   const { referralCode } = req.body;
@@ -292,52 +511,62 @@ app.post('/get-referred-users', async (req, res) => {
   }
 });
 
-
-
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
   const accountCreationDate = estimateAccountCreationDate(userId);
 
   try {
-    const hasTelegramPremium = await checkTelegramPremium(userId);
-    const isSubscribed = await checkChannelSubscription(userId);
+      const hasTelegramPremium = await checkTelegramPremium(userId);
+      const subscriptions = await checkChannelSubscription(userId);
 
-    const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
-    const firstName = chatMember.user.first_name || 'Anonymous'; // Используем first_name или задаем "Anonymous"
-    const nickname = chatMember.user.username || `user_${userId}`; // Используем username или генерируем никнейм
-    
+      let user = await UserProgress.findOne({ telegramId: userId });
+      if (!user) {
+          const coins = calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions);
+          user = new UserProgress({
+              telegramId: userId,
+              coins: coins,
+              coinsSub: 0,
+              hasTelegramPremium: hasTelegramPremium,
+              hasCheckedSubscription: subscriptions.isSubscribedToChannel1,
+              hasCheckedSubscription2: subscriptions.isSubscribedToChannel2,
+              hasCheckedSubscription3: subscriptions.isSubscribedToChannel3,
+              hasCheckedSubscription4: subscriptions.isSubscribedToChannel4
+          });
+          await user.save();
+      }
 
-    let user = await UserProgress.findOne({ telegramId: userId });
-    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-    const totalCoins = user.coins + referralCoins;
-    if (!user) {
-      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
-      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed });
-      await user.save();
-    } else {
-      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
-      const fuulcoin = coins + referralCoins;
-      user.coins = fuulcoin;
-      user.nickname = nickname;
-      user.firstName = firstName; // Обновляем имя
-      user.hasTelegramPremium = hasTelegramPremium;
-      user.hasCheckedSubscription = isSubscribed;
-      await user.save();
-    }
+      // Получение актуального никнейма пользователя через Telegram API
+      const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
+      const firstName = chatMember.user.first_name;
 
-    res.json({
-      coins: totalCoins,
-      referralCoins: referralCoins, // Добавляем общее количество монет за рефералов в ответ
-      hasTelegramPremium: user.hasTelegramPremium,
-      hasCheckedSubscription: user.hasCheckedSubscription,
-      accountCreationDate: accountCreationDate.toISOString()
-    });
+      // Обновляем никнейм пользователя, если он изменился
+      if (user.firstName !== firstName) {
+          user.firstName = firstName;
+          await user.save();
+      }
+
+      // Проверяем никнейм и начисляем награду, если необходимо
+      await checkNicknameAndReward(userId);
+
+      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+      const totalCoins = user.coins;
+      res.json({
+          coins: totalCoins,
+          referralCoins: referralCoins,
+          hasTelegramPremium: user.hasTelegramPremium,
+          hasCheckedSubscription: user.hasCheckedSubscription,
+          hasCheckedSubscription2: user.hasCheckedSubscription2,
+          hasCheckedSubscription3: user.hasCheckedSubscription3,
+          hasCheckedSubscription4: user.hasCheckedSubscription4,
+          hasNicknameBonus: user.hasNicknameBonus,
+          transactionNumber: user.transactionNumber,
+          accountCreationDate: accountCreationDate.toISOString()
+      });
   } catch (error) {
-    console.error('Ошибка при сохранении пользователя:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+      console.error('Ошибка при получении данных пользователя:', error);
+      res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-
 
 
 app.get('/user-rank', async (req, res) => {
@@ -348,12 +577,7 @@ app.get('/user-rank', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
 
-    // Рассчитываем монеты, включая монеты за рефералов
-    
-
-    // Рассчитываем позицию пользователя, учитывая общие монеты
     const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins } }) + 1;
-
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
     console.error('Ошибка при получении позиции пользователя:', error);
@@ -365,14 +589,11 @@ app.get('/leaderboard', async (req, res) => {
   try {
     const users = await UserProgress.find({});
 
-    const leaderboard = users.map(user => {
-      //const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-      return {
-        _id: user._id,
-        nickname: user.nickname,
-        coins: user.coins //+ referralCoins // Суммируем монеты с учетом рефералов
-      };
-    }).sort((a, b) => b.coins - a.coins).slice(0, 50);
+    const leaderboard = users.map(user => ({
+      _id: user._id,
+      nickname: user.nickname,
+      coins: user.coins
+    })).sort((a, b) => b.coins - a.coins).slice(0, 50);
 
     res.json({ success: true, leaderboard });
   } catch (error) {
@@ -381,113 +602,166 @@ app.get('/leaderboard', async (req, res) => {
   }
 });
 
-app.get('/get-user-data', async (req, res) => {
-  const { userId } = req.query;
-
-  try {
-    const user = await UserProgress.findOne({ telegramId: userId });
-    if (!user) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
+app.post('/get-referral-count', async (req, res) => {
+    const { userId } = req.body;
+  
+    try {
+      const user = await UserProgress.findOne({ telegramId: userId });
+      if (user) {
+        const referralCount = user.referredUsers ? user.referredUsers.length : 0;
+        res.json({ success: true, referralCount });
+      } else {
+        res.status(404).json({ success: false, message: 'User not found.' });
+      }
+    } catch (error) {
+      console.error('Error fetching referral count:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
     }
-    res.json({
-      coins: user.coins,
-      telegramId: user.telegramId,
-      hasTelegramPremium: user.hasTelegramPremium,
-      hasCheckedSubscription: user.hasCheckedSubscription
-    });
-  } catch (error) {
-    console.error('Ошибка при получении данных пользователя:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
-  }
-});
+  });
+  
+
+app.post('/add-coins', async (req, res) => {
+    const { userId, amount } = req.body;
+  
+    try {
+      let user = await UserProgress.findOne({ telegramId: userId });
+      if (user) {
+        user.coins += amount;
+        await user.save();
+        res.json({ success: true, coins: user.coins });
+      } else {
+        res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+      }
+    } catch (error) {
+      console.error('Ошибка при добавлении монет:', error);
+      res.status(500).json({ success: false, message: 'Ошибка сервера' });
+    }
+  });
+  
+
+// app.get('/get-user-data', async (req, res) => {
+//   const { userId } = req.query;
+
+//   try {
+//     const user = await UserProgress.findOne({ telegramId: userId });
+//     if (!user) {
+//       return res.status(404).json({ error: 'Пользователь не найден' });
+//     }
+//     res.json({
+//       coins: user.coins,
+//       telegramId: user.telegramId,
+//       hasTelegramPremium: user.hasTelegramPremium,
+//       hasCheckedSubscription: user.hasCheckedSubscription,
+//       hasCheckedSubscription2: user.hasCheckedSubscription2
+//     });
+//   } catch (error) {
+//     console.error('Ошибка при получении данных пользователя:', error);
+//     res.status(500).json({ error: 'Ошибка сервера' });
+//   }
+// });
 
 async function sendMessageToAllUsers(message, buttonText, buttonUrl, buttonType) {
   try {
-    const users = await UserProgress.find({}, 'telegramId');
+      const users = await UserProgress.find({}, 'telegramId');
 
-    const promises = users.map(user => {
-      if (message.text) {
-        if (buttonText && buttonUrl) {
-          const replyMarkup = buttonType === 'web_app' ? 
-            { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
-            { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+      const promises = users.map(user => {
+          if (message.text) {
+              // Отправка текстового сообщения
+              if (buttonText && buttonUrl) {
+                  const replyMarkup = buttonType === 'web_app' ? 
+                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
+                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
 
-          return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
-        } else {
-          return bot.sendMessage(user.telegramId, message.text);
-        }
-      } else if (message.photo) {
-        const photo = message.photo[message.photo.length - 1].file_id;
-        const caption = message.caption || '';
-        if (buttonText && buttonUrl) {
-          const replyMarkup = buttonType === 'web_app' ? 
-            { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
-            { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+                  return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
+              } else {
+                  return bot.sendMessage(user.telegramId, message.text);
+              }
+          } else if (message.photo) {
+              // Отправка фото
+              const photo = message.photo[message.photo.length - 1].file_id;
+              const caption = message.caption || '';
+              if (buttonText && buttonUrl) {
+                  const replyMarkup = buttonType === 'web_app' ? 
+                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
+                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
 
-          return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
-        } else {
-          return bot.sendPhoto(user.telegramId, photo, { caption });
-        }
-      }
-    });
+                  return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
+              } else {
+                  return bot.sendPhoto(user.telegramId, photo, { caption });
+              }
+          } else if (message.video) {
+              // Отправка видео
+              const video = message.video.file_id;
+              const caption = message.caption || '';
+              if (buttonText && buttonUrl) {
+                  const replyMarkup = buttonType === 'web_app' ? 
+                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
+                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
 
-    await Promise.all(promises);
+                  return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
+              } else {
+                  return bot.sendVideo(user.telegramId, video, { caption });
+              }
+          }
+      });
+
+      await Promise.all(promises);
   } catch (error) {
-    console.error('Ошибка при отправке сообщений:', error);
+      console.error('Ошибка при отправке сообщений:', error);
   }
 }
-
 
 const ADMIN_IDS = [561009411]; // Замени на реальные Telegram ID администраторов
 
 bot.onText(/\/broadcast/, (msg) => {
-  const chatId = msg.chat.id;
-  const userId = msg.from.id;
-
-  if (!ADMIN_IDS.includes(userId)) {
-    return bot.sendMessage(chatId, 'У вас нет прав для использования этой команды.');
-  }
-
-  userStates[userId] = { state: 'awaiting_message' };
-  bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
-});
-
-
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const userId = msg.from.id;
-
-  if (userStates[userId] && userStates[userId].state === 'awaiting_message') {
-    userStates[userId].message = msg;
-    userStates[userId].state = 'awaiting_button_choice';
-
-    bot.sendMessage(chatId, 'Вы хотите добавить инлайн кнопку? Отправьте "да" или "нет".');
-  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_choice') {
-    if (msg.text.toLowerCase() === 'да') {
-      userStates[userId].state = 'awaiting_button_text';
-      bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для инлайн кнопки.');
-    } else {
-      await sendMessageToAllUsers(userStates[userId].message);
-      delete userStates[userId];
-      bot.sendMessage(chatId, 'Сообщение успешно отправлено всем пользователям.');
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+  
+    if (!ADMIN_IDS.includes(userId)) {
+      return bot.sendMessage(chatId, 'У вас нет прав для использования этой команды.');
     }
-  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text') {
-    userStates[userId].buttonText = msg.text;
-    userStates[userId].state = 'awaiting_button_url';
-    bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для инлайн кнопки.');
-  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url') {
-    userStates[userId].buttonUrl = msg.text;
-    userStates[userId].state = 'awaiting_button_type';
-    bot.sendMessage(chatId, 'Какого типа будет кнопка? Отправьте "web_app" или "url".');
-  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type') {
-    userStates[userId].buttonType = msg.text.toLowerCase();
+  
+    userStates[userId] = { state: 'awaiting_message' };
+    bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
+  });
+  
 
-    await sendMessageToAllUsers(userStates[userId].message, userStates[userId].buttonText, userStates[userId].buttonUrl, userStates[userId].buttonType);
-    delete userStates[userId];
-    bot.sendMessage(chatId, 'Сообщение с инлайн кнопкой успешно отправлено всем пользователям.');
-  }
-});
-
+  bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+  
+    if (userStates[userId] && userStates[userId].state === 'awaiting_message') {
+      userStates[userId].message = msg;
+      userStates[userId].state = 'awaiting_button_choice';
+  
+      bot.sendMessage(chatId, 'Вы хотите добавить инлайн кнопку? Отправьте "да" или "нет".');
+    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_choice') {
+      if (msg.text.toLowerCase() === 'да') {
+        userStates[userId].state = 'awaiting_button_text';
+        bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для инлайн кнопки.');
+      } else {
+        await sendMessageToAllUsers(userStates[userId].message);
+        delete userStates[userId];
+        bot.sendMessage(chatId, 'Сообщение успешно отправлено всем пользователям.');
+      }
+    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text') {
+      userStates[userId].buttonText = msg.text;
+      userStates[userId].state = 'awaiting_button_url';
+      bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для инлайн кнопки.');
+    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url') {
+      userStates[userId].buttonUrl = msg.text;
+      userStates[userId].state = 'awaiting_button_type';
+      bot.sendMessage(chatId, 'Какого типа будет кнопка? Отправьте "web_app" или "url".');
+    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type') {
+      userStates[userId].buttonType = msg.text.toLowerCase();
+  
+      await sendMessageToAllUsers(userStates[userId].message, userStates[userId].buttonText, userStates[userId].buttonUrl, userStates[userId].buttonType);
+      delete userStates[userId];
+      bot.sendMessage(chatId, 'Сообщение с инлайн кнопкой успешно отправлено всем пользователям.');
+    }
+  });
+  
+  
 
 
 bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
@@ -499,27 +773,35 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
   const firstName = msg.from.first_name || 'Anonymous';
   const accountCreationDate = estimateAccountCreationDate(userId);
   const hasTelegramPremium = await checkTelegramPremium(userId);
-  const isSubscribed = await checkChannelSubscription(userId);
-  const coins = calculateCoins(accountCreationDate, hasTelegramPremium, isSubscribed);
+  const subscriptions = await checkChannelSubscription(userId);
+  const coins = calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions);
 
   try {
     let user = await UserProgress.findOne({ telegramId: userId });
     const isNewUser = !user;
     if (isNewUser) {
       const referralCode = generateReferralCode();
-      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: isSubscribed, referralCode });
+      user = new UserProgress({ telegramId: userId, nickname, firstName, coins, hasTelegramPremium, hasCheckedSubscription: subscriptions.isSubscribedToChannel1, hasCheckedSubscription2: subscriptions.isSubscribedToChannel2, hasCheckedSubscription3: subscriptions.isSubscribedToChannel3, hasCheckedSubscription4: subscriptions.isSubscribedToChannel4,referralCode });
       await user.save();
     } else {
       const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-      user.coins = coins + referralCoins;
+      user.coins = coins + referralCoins + user.coinsSub;
       user.nickname = nickname;
       user.firstName = firstName;
       user.hasTelegramPremium = hasTelegramPremium;
-      user.hasCheckedSubscription = isSubscribed;
+      user.hasCheckedSubscription = subscriptions.isSubscribedToChannel1;
+      user.hasCheckedSubscription2 = subscriptions.isSubscribedToChannel2;
+      user.hasCheckedSubscription3 = subscriptions.isSubscribedToChannel3;
+      user.hasCheckedSubscription4 = subscriptions.isSubscribedToChannel4;
+      if(user.hasReceivedTwitterReward){
+        user.coins += 500;
+      }
+      if(user.hasTelegramPremium){
+        user.coins += 500;
+      }
       await user.save();
     }
 
-    // Если есть реферальный код и пользователь новый, проверяем код и добавляем реферала
     if (referrerCode && isNewUser) {
       if (referrerCode === user.referralCode) {
         bot.sendMessage(chatId, 'Вы не можете использовать свою собственную реферальную ссылку.');
@@ -534,47 +816,34 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       }
     }
 
-   const appUrl = `https://bomboklad.online?userId=${userId}`;
-   const channelUrl = `https://t.me/octies_channel`;
+    const appUrl = `https://octies.org/?userId=${userId}`;
+    const channelUrl = `https://t.me/octies_channel`;
 
-   const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
+    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
     
-   console.log(`Sending photo from path: ${imagePath}`);
-   await bot.sendPhoto(chatId, imagePath, {
-     caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙",
-     reply_markup: {
-       inline_keyboard: [
-         [
-           { text: "Let's Go!", web_app: { url: appUrl } },
-           { text: 'Join OCTIES Community', url: channelUrl }
-         ]
-       ]
-     }
-   }).then(() => {
-     console.log('Photo and buttons sent successfully');
-   }).catch((err) => {
-     console.error('Error sending photo and buttons:', err);
-   });
+    console.log(`Sending photo from path: ${imagePath}`);
+    await bot.sendPhoto(chatId, imagePath, {
+      caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙",
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "Let's Go!", web_app: { url: appUrl } },
+            { text: 'Join OCTIES Community', url: channelUrl }
+          ]
+        ]
+      }
+    }).then(() => {
+      console.log('Photo and buttons sent successfully');
+    }).catch((err) => {
+      console.error('Error sending photo and buttons:', err);
+    });
 
- } catch (error) {
-   console.error('Ошибка при создании пользователя:', error);
-   bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
- }
+  } catch (error) {
+    console.error('Ошибка при создании пользователя:', error);
+    bot.sendMessage(chatId, 'Произошла ошибка при создании пользователя.');
+  }
 });
 
 app.listen(port, () => {
   console.log(`Сервер работает на порту ${port}`);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
