@@ -11,6 +11,7 @@ const axios = require('axios');
 const app = express();
 const port = process.env.PORT || 3001;
 const token = process.env.TOKEN;
+const bot = new TelegramBot(token, { polling: true });
 const CHANNEL_ID = -1002187857390; 
 const CHANNEL_ID_2 =-1002246870197;
 const CHANNEL_ID_3 = -1002088709942; 
