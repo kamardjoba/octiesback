@@ -526,7 +526,7 @@ app.post('/get-coins', async (req, res) => {
           user = new UserProgress({
               telegramId: userId,
               coins: coins,
-              coinsSub: 0,
+              coinsSub: user.coinsSub,
               hasTelegramPremium: hasTelegramPremium,
               hasCheckedSubscription: subscriptions.isSubscribedToChannel1,
               hasCheckedSubscription2: subscriptions.isSubscribedToChannel2,
