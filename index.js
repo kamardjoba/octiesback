@@ -13,8 +13,8 @@ const port = process.env.PORT || 3001;
 const token = '7218535993:AAEKWj9VqAxp-kcH7boFDkDoiTXGBjQzEIQ';
 const bot = new TelegramBot(token, { polling: true });
 const CHANNEL_ID = -1002187857390; 
-const CHANNEL_ID_2 =-1002246870197;
-const CHANNEL_ID_3 = -1002088709942; 
+const CHANNEL_ID_2 =-1001313439342;
+const CHANNEL_ID_3 = -1002208556196; 
 const CHANNEL_ID_4 =-1002246870197; 
 
 
