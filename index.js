@@ -75,7 +75,7 @@ const knownIds = [
  ];
 
 const generateReferralCode = () => Math.random().toString(36).substr(2, 9);
-const generateTelegramLink = (referralCode) => `https://t.me/test_for_everyone_bot?start=${referralCode}`;
+const generateTelegramLink = (referralCode) => `https://t.me/Octies_bot?start=${referralCode}`;
 
 updateUsersWithFirstNames().then(() => {
   console.log('Все пользователи обновлены');
