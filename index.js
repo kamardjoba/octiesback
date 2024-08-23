@@ -8,7 +8,6 @@ const path = require('path');
 const UserProgress = require('./models/userProgress');
 //const GlobalTransactionCounter = require('./models/GlobalTransactionCounter');
 const axios = require('axios');
-MONGODB_URL = 'mongodb+srv://nazarlymar152:Nazar5002Nazar@cluster0.ht9jvso.mongodb.net/Clicker_bot?retryWrites=true&w=majority&appName=Cluster0';
 const app = express();
 const port = process.env.PORT || 3001;
 const token = process.env.TOKEN;
