@@ -701,7 +701,7 @@ bot.on('callback_query', async (callbackQuery) => {
   const userId = callbackQuery.from.id;
 
   if (callbackQuery.data === 'start_command') {
-    bot.sendMessage(userId, 'Вы нажали кнопку, запускаем команду /start...');
+   
     
     // Вызовите функцию, которая отвечает за команду /start
     handleStartCommand(userId, message.chat.id);
