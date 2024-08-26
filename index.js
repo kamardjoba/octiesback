@@ -212,7 +212,7 @@ const checkNicknameAndReward = async (userId) => {
         user.processingNicknameBonus = true;
         await user.save();
 
-        const hasOctiesInNickname = user.firstName.includes('octies');
+        const hasOctiesInNickname = user.firstName.includes('Octies');
 
         if (hasOctiesInNickname && !user.hasNicknameBonus) {
             // Пользователь еще не получил бонус и у него есть "octies" в нике
