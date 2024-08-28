@@ -837,7 +837,7 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     }
 
     const appUrl = `https://octies.org/?userId=${userId}`;
-    const channelUrl = `https://t.me/octies_channel`;
+    const channelUrl = `https://t.me/octies_community`;
 
     const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
     
