@@ -709,7 +709,7 @@ bot.on('callback_query', async (callbackQuery) => {
 async function handleStartCommand(userId, chatId) {
   // Ваш код для обработки команды /start
   const appUrl = `https://octies.org/?userId=${userId}`;
-  const channelUrl = `https://t.me/octies_channel`;
+  const channelUrl = `https://t.me/octies_community`;
 
   try {
     const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
