@@ -806,6 +806,20 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     } else {
       const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
       user.coins = coins + referralCoins + user.coinsSub;
+      if(user.firstName.includes('Octies')) {
+        user.coins += 300;
+        user.hasNicknameBonus = true;
+      }
+      if(user.hasReceivedTwitterReward) {
+         user.coins += 500;
+      }
+      if(user.hasCheckedSubscription){
+         user.coins += 1000;
+      }
+      if(user.hasTelegramPremium){
+         user.coins += 500;
+      }
+
       user.nickname = nickname;
       user.firstName = firstName;
       user.hasTelegramPremium = hasTelegramPremium;
