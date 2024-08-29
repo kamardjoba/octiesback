@@ -122,7 +122,7 @@ function calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions) 
     const accountYear = accountCreationDate.getFullYear();
     const yearsOld = currentYear - accountYear;
     const baseCoins = yearsOld * 500;
-    const premiumBonus = hasTelegramPremium ? 1 : 0;
+    const premiumBonus = hasTelegramPremium ? 500 : 0;
     const subscriptionBonus1 = subscriptions.isSubscribedToChannel1 ? 1000 : 0;
     const subscriptionBonus2 = subscriptions.isSubscribedToChannel2 ? 750 : 0;
     const subscriptionBonus3 = subscriptions.isSubscribedToChannel3 ? 750 : 0;
@@ -827,12 +827,6 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
       user.hasCheckedSubscription2 = subscriptions.isSubscribedToChannel2;
       user.hasCheckedSubscription3 = subscriptions.isSubscribedToChannel3;
       user.hasCheckedSubscription4 = subscriptions.isSubscribedToChannel4;
-      if(user.hasReceivedTwitterReward){
-        user.coins += 500;
-      }
-      if(user.hasTelegramPremium){
-        user.coins += 500;
-      }
       await user.save();
     }
 
