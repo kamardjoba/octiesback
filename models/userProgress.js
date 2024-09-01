@@ -75,6 +75,11 @@ const UserSchema = new mongoose.Schema({
     
   },
 
+  hasMintedNFT: {
+    type: Boolean,
+    default: false
+  },
+
   transactionNumber: { 
     type: Number, 
     default: 0 
