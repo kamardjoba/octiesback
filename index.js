@@ -635,26 +635,6 @@ app.post('/add-coins', async (req, res) => {
     }
   });
   
-  app.post('/save-wallet', async (req, res) => {
-    console.log('Получен запрос на сохранение кошелька:', req.body);
-    const { userId, walletAddress } = req.body;
-
-    try {
-        let user = await UserProgress.findOne({ telegramId: userId });
-        if (user) {
-            user.walletAddress = walletAddress;
-            await user.save();
-            console.log('Кошелек сохранен для пользователя:', userId);
-            res.json({ success: true, message: 'Кошелек сохранен.' });
-        } else {
-            console.error('Пользователь не найден:', userId);
-            res.status(404).json({ success: false, message: 'Пользователь не найден.' });
-        }
-    } catch (error) {
-        console.error('Ошибка при сохранении кошелька:', error);
-        res.status(500).json({ success: false, message: 'Ошибка сервера' });
-    }
-});
 
 // app.get('/get-user-data', async (req, res) => {
 //   const { userId } = req.query;
@@ -802,7 +782,29 @@ bot.onText(/\/broadcast/, (msg) => {
     }
   });
   
+  app.post('/save-wallet-address', async (req, res) => {
+    const { userId, walletAddress } = req.body;
 
+    try {
+        // Находим пользователя по его ID
+        let user = await UserProgress.findOne({ telegramId: userId });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+        }
+
+        // Обновляем адрес кошелька, если он еще не сохранен
+        if (!user.walletAddress) {
+            user.walletAddress = walletAddress;
+            await user.save();
+        }
+
+        res.json({ success: true, message: 'Адрес кошелька успешно сохранен.' });
+    } catch (error) {
+        console.error('Ошибка при сохранении адреса кошелька:', error);
+        res.status(500).json({ success: false, message: 'Ошибка при сохранении адреса кошелька.' });
+    }
+});
 
 bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
   const chatId = msg.chat.id;
