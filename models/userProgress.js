@@ -37,7 +37,11 @@ const UserSchema = new mongoose.Schema({
     default: 0 
   },
 
-
+  walletAddress: { 
+    type: String, 
+    required: false 
+  },
+  
   hasTelegramPremium:
   { 
     type: Boolean,
