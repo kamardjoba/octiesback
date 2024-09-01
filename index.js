@@ -635,27 +635,23 @@ app.post('/add-coins', async (req, res) => {
     }
   });
   
- 
-  app.post('/save-wallet-address', async (req, res) => {
-    const { telegramId, walletAddress } = req.body;
+  app.post('/save-wallet', async (req, res) => {
+    const { userId, walletAddress } = req.body;
 
     try {
-        const user = await UserProgress.findOne({ telegramId });
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found.' });
+        let user = await UserProgress.findOne({ telegramId: userId });
+        if (user) {
+            user.walletAddress = walletAddress;
+            await user.save();
+            res.json({ success: true, message: 'Кошелек сохранен.' });
+        } else {
+            res.status(404).json({ success: false, message: 'Пользователь не найден.' });
         }
-
-        user.walletAddress = walletAddress; // Сохраняем адрес кошелька
-        await user.save();
-
-        res.json({ success: true, message: 'Wallet address saved successfully!' });
     } catch (error) {
-        console.error('Error saving wallet address:', error);
-        res.status(500).json({ success: false, message: 'Error saving wallet address.' });
+        console.error('Ошибка при сохранении кошелька:', error);
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 });
-  
-
 
 // app.get('/get-user-data', async (req, res) => {
 //   const { userId } = req.query;
