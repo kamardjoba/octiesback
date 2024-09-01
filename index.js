@@ -785,23 +785,24 @@ bot.onText(/\/broadcast/, (msg) => {
   app.post('/save-wallet-address', async (req, res) => {
     const { userId, walletAddress } = req.body;
 
+    console.log(`Запрос на сохранение адреса кошелька: userId=${userId}, walletAddress=${walletAddress}`);
+    
     try {
-        // Находим пользователя по его ID
         let user = await UserProgress.findOne({ telegramId: userId });
 
         if (!user) {
+            console.log(`Пользователь с userId=${userId} не найден.`);
             return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
         }
 
-        // Обновляем адрес кошелька, если он еще не сохранен
-        if (!user.walletAddress) {
-            user.walletAddress = walletAddress;
-            await user.save();
-        }
+        user.walletAddress = walletAddress;
+
+        await user.save();
+        console.log(`Адрес кошелька успешно сохранен для userId=${userId}.`);
 
         res.json({ success: true, message: 'Адрес кошелька успешно сохранен.' });
     } catch (error) {
-        console.error('Ошибка при сохранении адреса кошелька:', error);
+        console.error(`Ошибка при сохранении адреса кошелька: ${error.message}`);
         res.status(500).json({ success: false, message: 'Ошибка при сохранении адреса кошелька.' });
     }
 });
