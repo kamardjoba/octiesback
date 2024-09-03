@@ -270,6 +270,26 @@ app.post('/generate-referral', async (req, res) => {
   }
 });
 
+app.post('/update-mint-status', async (req, res) => {
+  const { userId, hasMintedNFT } = req.body;
+
+  try {
+    let user = await UserProgress.findOne({ telegramId: userId });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+    }
+
+    user.hasMintedNFT = hasMintedNFT;
+    await user.save();
+
+    res.json({ success: true, message: 'Статус mint обновлен успешно.' });
+  } catch (error) {
+    console.error('Ошибка при обновлении статуса mint:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера при обновлении статуса mint.' });
+  }
+});
+
 app.post('/check-subscription', async (req, res) => {
   const { userId } = req.body;
 
