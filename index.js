@@ -546,7 +546,7 @@ app.post('/get-coins', async (req, res) => {
 
       // Проверяем никнейм и начисляем награду, если необходимо
       await checkNicknameAndReward(userId);
-
+      const hasMintedNFT = user.hasMintedNFT;
       const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
       const totalCoins = user.coins;
       res.json({
@@ -558,6 +558,7 @@ app.post('/get-coins', async (req, res) => {
           hasCheckedSubscription3: user.hasCheckedSubscription3,
           hasCheckedSubscription4: user.hasCheckedSubscription4,
           hasNicknameBonus: user.hasNicknameBonus,
+          hasMintedNFT,
           transactionNumber: user.transactionNumber,
           accountCreationDate: accountCreationDate.toISOString()
       });
