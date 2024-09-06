@@ -587,9 +587,7 @@ app.get('/user-rank', async (req, res) => {
 
 app.get('/leaderboard', async (req, res) => {
   try {
-    const users = await UserProgress.find({}, { nickname: 1, coins: 1 })
-  .sort({ coins: -1 })
-  .limit(50);
+    const users = await UserProgress.find({});
 
     const leaderboard = users.map(user => ({
       _id: user._id,
