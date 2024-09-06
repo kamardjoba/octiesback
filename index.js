@@ -23,7 +23,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 
-
 mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
@@ -190,7 +189,6 @@ async function checkTelegramPremium(userId) {
   }
 }
 
-
 // Функция для проверки никнейма и награды
 const checkNicknameAndReward = async (userId) => {
     try {
@@ -270,8 +268,6 @@ app.post('/generate-referral', async (req, res) => {
   }
 });
 
-
-
 app.post('/check-subscription', async (req, res) => {
   const { userId } = req.body;
 
@@ -308,8 +304,6 @@ app.post('/check-subscription', async (req, res) => {
   }
 });
 
-
-
 app.post('/record-transaction', async (req, res) => {
   const { userId } = req.body;
 
@@ -337,8 +331,6 @@ app.post('/record-transaction', async (req, res) => {
       res.status(500).json({ success: false, message: 'Ошибка при записи транзакции.' });
   }
 });
-
-
 
 app.post('/get-referral-count', async (req, res) => {
     const { userId } = req.body;
@@ -414,8 +406,6 @@ app.post('/update-coins', async (req, res) => {
       res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
-
-
 
 app.post('/check-subscription-and-update', async (req, res) => {
     const { userId } = req.body;
@@ -570,8 +560,6 @@ app.post('/get-coins', async (req, res) => {
   }
 });
 
-
-
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
   try {
@@ -622,8 +610,7 @@ app.post('/get-referral-count', async (req, res) => {
       console.error('Error fetching referral count:', error);
       res.status(500).json({ success: false, message: 'Server error' });
     }
-  });
-  
+});
 
 app.post('/add-coins', async (req, res) => {
     const { userId, amount } = req.body;
@@ -641,8 +628,7 @@ app.post('/add-coins', async (req, res) => {
       console.error('Ошибка при добавлении монет:', error);
       res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
-  });
-  
+});
 
 // app.get('/get-user-data', async (req, res) => {
 //   const { userId } = req.query;
@@ -739,7 +725,6 @@ async function handleStartCommand(userId, chatId) {
   }
 }
 
-
 const ADMIN_IDS = [561009411]; // Замени на реальные Telegram ID администраторов
 
 bot.onText(/\/broadcast/, (msg) => {
@@ -752,10 +737,9 @@ bot.onText(/\/broadcast/, (msg) => {
   
     userStates[userId] = { state: 'awaiting_message' };
     bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
-  });
+});
   
-
-  bot.on('message', async (msg) => {
+bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
   
@@ -788,9 +772,9 @@ bot.onText(/\/broadcast/, (msg) => {
       delete userStates[userId];
       bot.sendMessage(chatId, 'Сообщение с инлайн кнопкой успешно отправлено всем пользователям.');
     }
-  });
+});
   
-  app.post('/save-wallet-address', async (req, res) => {
+app.post('/save-wallet-address', async (req, res) => {
     const { userId, walletAddress } = req.body;
 
     console.log(`Запрос на сохранение адреса кошелька: userId=${userId}, walletAddress=${walletAddress}`);
