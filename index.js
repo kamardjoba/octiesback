@@ -552,6 +552,7 @@ app.post('/get-coins', async (req, res) => {
       res.json({
           coins: totalCoins,
           referralCoins: referralCoins,
+          coinsSub: user.coinsSub,
           hasTelegramPremium: user.hasTelegramPremium,
           hasCheckedSubscription: user.hasCheckedSubscription,
           hasCheckedSubscription2: user.hasCheckedSubscription2,
