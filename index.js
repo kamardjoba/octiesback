@@ -510,62 +510,134 @@ app.post('/get-referred-users', async (req, res) => {
   }
 });
 
+// app.post('/get-coins', async (req, res) => {
+//   const { userId } = req.body;
+//   const accountCreationDate = estimateAccountCreationDate(userId);
+
+//   try {
+//       const hasTelegramPremium = await checkTelegramPremium(userId);
+//       const subscriptions = await checkChannelSubscription(userId);
+
+//       let user = await UserProgress.findOne({ telegramId: userId });
+//       if (!user) {
+//           const coins = calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions);
+//           user = new UserProgress({
+//               telegramId: userId,
+//               coins: coins,
+//               coinsSub: user.coinsSub,
+//               hasTelegramPremium: hasTelegramPremium,
+//               hasCheckedSubscription: subscriptions.isSubscribedToChannel1,
+//               hasCheckedSubscription2: subscriptions.isSubscribedToChannel2,
+//               hasCheckedSubscription3: subscriptions.isSubscribedToChannel3,
+//               hasCheckedSubscription4: subscriptions.isSubscribedToChannel4
+//           });
+//           await user.save();
+//       }
+
+//       // Получение актуального никнейма пользователя через Telegram API
+//       const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
+//       const firstName = chatMember.user.first_name;
+
+//       // Обновляем никнейм пользователя, если он изменился
+//       if (user.firstName !== firstName) {
+//           user.firstName = firstName;
+//           await user.save();
+//       }
+
+//       // Проверяем никнейм и начисляем награду, если необходимо
+//       await checkNicknameAndReward(userId);
+//       const hasMintedNFT = user.hasMintedNFT;
+//       const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+//       const totalCoins = user.coins;
+//       res.json({
+//           coins: totalCoins,
+//           referralCoins: referralCoins,
+//           coinsSub: user.coinsSub,
+//           hasTelegramPremium: user.hasTelegramPremium,
+//           hasCheckedSubscription: user.hasCheckedSubscription,
+//           hasCheckedSubscription2: user.hasCheckedSubscription2,
+//           hasCheckedSubscription3: user.hasCheckedSubscription3,
+//           hasCheckedSubscription4: user.hasCheckedSubscription4,
+//           hasReceivedTwitterReward: user.hasReceivedTwitterReward,
+//           hasNicknameBonus: user.hasNicknameBonus,
+//           hasMintedNFT,
+//           transactionNumber: user.transactionNumber,
+//           accountCreationDate: accountCreationDate.toISOString()
+//       });
+//   } catch (error) {
+//       console.error('Ошибка при получении данных пользователя:', error);
+//       res.status(500).json({ error: 'Ошибка сервера' });
+//   }
+// });
+
 app.post('/get-coins', async (req, res) => {
   const { userId } = req.body;
+
+  // Определяем дату создания аккаунта
   const accountCreationDate = estimateAccountCreationDate(userId);
 
   try {
-      const hasTelegramPremium = await checkTelegramPremium(userId);
-      const subscriptions = await checkChannelSubscription(userId);
+    // Проверяем наличие Telegram Premium и подписок
+    const hasTelegramPremium = await checkTelegramPremium(userId);
+    const subscriptions = await checkChannelSubscription(userId);
 
-      let user = await UserProgress.findOne({ telegramId: userId });
-      if (!user) {
-          const coins = calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions);
-          user = new UserProgress({
-              telegramId: userId,
-              coins: coins,
-              coinsSub: user.coinsSub,
-              hasTelegramPremium: hasTelegramPremium,
-              hasCheckedSubscription: subscriptions.isSubscribedToChannel1,
-              hasCheckedSubscription2: subscriptions.isSubscribedToChannel2,
-              hasCheckedSubscription3: subscriptions.isSubscribedToChannel3,
-              hasCheckedSubscription4: subscriptions.isSubscribedToChannel4
-          });
-          await user.save();
-      }
+    // Ищем пользователя, запрашиваем только нужные поля с помощью .select()
+    let user = await UserProgress.findOne({ telegramId: userId })
+      .select('coins telegramId coinsSub hasTelegramPremium hasCheckedSubscription hasCheckedSubscription2 hasCheckedSubscription3 hasCheckedSubscription4 firstName hasNicknameBonus hasMintedNFT transactionNumber referredUsers');
 
-      // Получение актуального никнейма пользователя через Telegram API
+    // Если пользователь не найден, создаем его и вычисляем количество монет
+    if (!user) {
+      const coins = calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions);
+
+      user = new UserProgress({
+        telegramId: userId,
+        coins: coins,
+        coinsSub: user.coinsSub,
+        hasTelegramPremium: hasTelegramPremium,
+        hasCheckedSubscription: subscriptions.isSubscribedToChannel1,
+        hasCheckedSubscription2: subscriptions.isSubscribedToChannel2,
+        hasCheckedSubscription3: subscriptions.isSubscribedToChannel3,
+        hasCheckedSubscription4: subscriptions.isSubscribedToChannel4
+    });
+    await user.save();
+} else {
+      // Обновляем никнейм пользователя через Telegram API, если он изменился
       const chatMember = await bot.getChatMember(CHANNEL_ID, userId);
-      const firstName = chatMember.user.first_name;
+      const firstName = chatMember.user.first_name || 'Anonymous';
 
-      // Обновляем никнейм пользователя, если он изменился
       if (user.firstName !== firstName) {
-          user.firstName = firstName;
-          await user.save();
+        user.firstName = firstName;
+        await user.save();
       }
 
-      // Проверяем никнейм и начисляем награду, если необходимо
+      // Проверяем никнейм пользователя и начисляем бонус
       await checkNicknameAndReward(userId);
-      const hasMintedNFT = user.hasMintedNFT;
-      const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
-      const totalCoins = user.coins;
-      res.json({
-          coins: totalCoins,
-          referralCoins: referralCoins,
-          coinsSub: user.coinsSub,
-          hasTelegramPremium: user.hasTelegramPremium,
-          hasCheckedSubscription: user.hasCheckedSubscription,
-          hasCheckedSubscription2: user.hasCheckedSubscription2,
-          hasCheckedSubscription3: user.hasCheckedSubscription3,
-          hasCheckedSubscription4: user.hasCheckedSubscription4,
-          hasNicknameBonus: user.hasNicknameBonus,
-          hasMintedNFT,
-          transactionNumber: user.transactionNumber,
-          accountCreationDate: accountCreationDate.toISOString()
-      });
+    }
+
+    // Вычисляем количество монет за рефералов
+    const referralCoins = user.referredUsers.reduce((acc, ref) => acc + ref.earnedCoins, 0);
+    const totalCoins = user.coins + referralCoins;
+
+    // Формируем ответ
+    res.json({
+      coins: totalCoins,
+      referralCoins: referralCoins,
+      coinsSub: user.coinsSub,
+      hasTelegramPremium: user.hasTelegramPremium,
+      hasCheckedSubscription: user.hasCheckedSubscription,
+      hasCheckedSubscription2: user.hasCheckedSubscription2,
+      hasCheckedSubscription3: user.hasCheckedSubscription3,
+      hasCheckedSubscription4: user.hasCheckedSubscription4,
+      hasReceivedTwitterReward: user.hasReceivedTwitterReward || false,
+      hasNicknameBonus: user.hasNicknameBonus,
+      hasMintedNFT: user.hasMintedNFT,
+      transactionNumber: user.transactionNumber,
+      accountCreationDate: accountCreationDate.toISOString(),
+    });
+
   } catch (error) {
-      console.error('Ошибка при получении данных пользователя:', error);
-      res.status(500).json({ error: 'Ошибка сервера' });
+    console.error('Ошибка при получении данных пользователя:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
 
