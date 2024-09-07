@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const redis = require('redis');
+const client = redis.createClient();
 const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
 const path = require('path');
@@ -17,6 +19,9 @@ const CHANNEL_ID_2 =-1002088709942;
 const CHANNEL_ID_3 =-1002208556196; 
 const CHANNEL_ID_4 =-1002246870197; 
 
+
+
+
 const userStates = {};
 
 app.use(cors());
@@ -26,6 +31,14 @@ app.use(express.json());
 mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
+
+client.on('error', (err) => {
+  console.error('Ошибка подключения к Redis:', err);
+});
+    
+client.on('connect', () => {
+   console.log('Подключение к Redis успешно!');
+});
 
 const knownIds = [ 
     { id: 3226119, date: new Date('2013-11-29') },
@@ -180,41 +193,70 @@ function calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions) 
 
 async function checkChannelSubscription(userId) {
   try {
-    // Все запросы к API Telegram
-    const [response1, response2, response3, response4] = await Promise.all([
-      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID, user_id: userId } }),
-      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_2, user_id: userId } }),
-      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_3, user_id: userId } }),
-      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_4, user_id: userId } })
-    ]);
+    // Попробуем получить данные из кэша
+    return new Promise((resolve, reject) => {
+      client.get(`subscription:${userId}`, async (err, cachedData) => {
+        if (err) reject(err);
 
-    // Проверка статусов
-    const isSubscribedToChannel1 = ['member', 'administrator', 'creator'].includes(response1.data.result.status);
-    const isSubscribedToChannel2 = ['member', 'administrator', 'creator'].includes(response2.data.result.status);
-    const isSubscribedToChannel3 = ['member', 'administrator', 'creator'].includes(response3.data.result.status);
-    const isSubscribedToChannel4 = ['member', 'administrator', 'creator'].includes(response4.data.result.status);
+        // Если данные найдены в кэше
+        if (cachedData) {
+          console.log('Используем кэшированные данные.');
+          resolve(JSON.parse(cachedData));  // Возвращаем кэшированные данные
+        } else {
+          // Данные не найдены в кэше, выполняем запросы к API Telegram
+          const [response1, response2, response3, response4] = await Promise.all([
+            axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_1, user_id: userId } }),
+            axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_2, user_id: userId } }),
+            axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_3, user_id: userId } }),
+            axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_4, user_id: userId } })
+          ]);
 
-    return { isSubscribedToChannel1, isSubscribedToChannel2, isSubscribedToChannel3, isSubscribedToChannel4 };
+          const isSubscribedToChannel1 = ['member', 'administrator', 'creator'].includes(response1.data.result.status);
+          const isSubscribedToChannel2 = ['member', 'administrator', 'creator'].includes(response2.data.result.status);
+          const isSubscribedToChannel3 = ['member', 'administrator', 'creator'].includes(response3.data.result.status);
+          const isSubscribedToChannel4 = ['member', 'administrator', 'creator'].includes(response4.data.result.status);
+
+          const result = { 
+            isSubscribedToChannel1, 
+            isSubscribedToChannel2, 
+            isSubscribedToChannel3, 
+            isSubscribedToChannel4 
+          };
+
+          // Сохраняем данные в Redis с тайм-аутом (например, на 10 минут = 600 секунд)
+          client.setex(`subscription:${userId}`, 600, JSON.stringify(result));
+
+          resolve(result);  // Возвращаем результат
+        }
+      });
+    });
   } catch (error) {
     console.error('Ошибка при проверке подписки:', error);
-    return { isSubscribedToChannel1: false, isSubscribedToChannel2: false, isSubscribedToChannel3: false, isSubscribedToChannel4: false };
+    return {
+      isSubscribedToChannel1: false,
+      isSubscribedToChannel2: false,
+      isSubscribedToChannel3: false,
+      isSubscribedToChannel4: false
+    };
   }
 }
 
-// Маршрут для проверки подписки
+// Маршрут для проверки подписки с использованием userId из запроса
 app.post('/check-subscription', async (req, res) => {
   const { userId } = req.body;  // Получаем userId из тела запроса
+  
   if (!userId) {
-    return res.status(400).json({ error: 'Не указан userId' });
+    return res.status(400).json({ error: 'userId не указан' });
   }
 
   try {
-    const result = await checkChannelSubscription(userId);
-    res.json(result);  // Возвращаем результат проверки
+    const result = await checkChannelSubscription(userId);  // Вызываем функцию проверки
+    res.json(result);  // Отправляем результат клиенту
   } catch (error) {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
+
 
 
 async function checkTelegramPremium(userId) {
