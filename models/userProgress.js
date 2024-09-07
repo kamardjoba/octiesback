@@ -5,6 +5,7 @@ const UserSchema = new mongoose.Schema({
   telegramId:
    { type: Number,
      required: true,
+     index: true,
       unique: true 
    },
 
