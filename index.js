@@ -178,57 +178,44 @@ function calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions) 
 //   }
 // }
 
-async function checkChannelSubscription(telegramId) {
+async function checkChannelSubscription(userId) {
   try {
-    // Все запросы к API собираем в массив
+    // Все запросы к API Telegram
     const [response1, response2, response3, response4] = await Promise.all([
-      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
-        params: { chat_id: CHANNEL_ID, user_id: telegramId },
-      }),
-      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
-        params: { chat_id: CHANNEL_ID_2, user_id: telegramId },
-      }),
-      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
-        params: { chat_id: CHANNEL_ID_3, user_id: telegramId },
-      }),
-      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, {
-        params: { chat_id: CHANNEL_ID_4, user_id: telegramId },
-      })
+      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_1, user_id: userId } }),
+      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_2, user_id: userId } }),
+      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_3, user_id: userId } }),
+      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_4, user_id: userId } })
     ]);
 
-    // Разбор ответов
-    const status1 = response1.data.result.status;
-    const status2 = response2.data.result.status;
-    const status3 = response3.data.result.status;
-    const status4 = response4.data.result.status;
+    // Проверка статусов
+    const isSubscribedToChannel1 = ['member', 'administrator', 'creator'].includes(response1.data.result.status);
+    const isSubscribedToChannel2 = ['member', 'administrator', 'creator'].includes(response2.data.result.status);
+    const isSubscribedToChannel3 = ['member', 'administrator', 'creator'].includes(response3.data.result.status);
+    const isSubscribedToChannel4 = ['member', 'administrator', 'creator'].includes(response4.data.result.status);
 
-    const isSubscribedToChannel1 = ['member', 'administrator', 'creator'].includes(status1);
-    const isSubscribedToChannel2 = ['member', 'administrator', 'creator'].includes(status2);
-    const isSubscribedToChannel3 = ['member', 'administrator', 'creator'].includes(status3);
-    const isSubscribedToChannel4 = ['member', 'administrator', 'creator'].includes(status4);
-
-    return { 
-      isSubscribedToChannel1, 
-      isSubscribedToChannel2, 
-      isSubscribedToChannel3, 
-      isSubscribedToChannel4 
-    };
-
+    return { isSubscribedToChannel1, isSubscribedToChannel2, isSubscribedToChannel3, isSubscribedToChannel4 };
   } catch (error) {
-    console.error('Ошибка при проверке подписки на каналы:', error);
-    return {
-      isSubscribedToChannel1: false,
-      isSubscribedToChannel2: false,
-      isSubscribedToChannel3: false,
-      isSubscribedToChannel4: false
-    };
+    console.error('Ошибка при проверке подписки:', error);
+    return { isSubscribedToChannel1: false, isSubscribedToChannel2: false, isSubscribedToChannel3: false, isSubscribedToChannel4: false };
   }
 }
 
-// Вызов функции
-checkChannelSubscription(userId).then(result => {
-  console.log('Результат проверки подписок:', result);
+// Маршрут для проверки подписки
+app.post('/check-subscription', async (req, res) => {
+  const { userId } = req.body;  // Получаем userId из тела запроса
+  if (!userId) {
+    return res.status(400).json({ error: 'Не указан userId' });
+  }
+
+  try {
+    const result = await checkChannelSubscription(userId);
+    res.json(result);  // Возвращаем результат проверки
+  } catch (error) {
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
 });
+
 
 async function checkTelegramPremium(userId) {
   try {
