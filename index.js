@@ -226,7 +226,7 @@ async function checkChannelSubscription(telegramId) {
 }
 
 // Вызов функции
-checkChannelSubscription(telegramId).then(result => {
+checkChannelSubscription(userId).then(result => {
   console.log('Результат проверки подписок:', result);
 });
 
