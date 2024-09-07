@@ -182,7 +182,7 @@ async function checkChannelSubscription(userId) {
   try {
     // Все запросы к API Telegram
     const [response1, response2, response3, response4] = await Promise.all([
-      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_1, user_id: userId } }),
+      axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID, user_id: userId } }),
       axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_2, user_id: userId } }),
       axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_3, user_id: userId } }),
       axios.get(`https://api.telegram.org/bot${token}/getChatMember`, { params: { chat_id: CHANNEL_ID_4, user_id: userId } })
