@@ -2,8 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const redis = require('redis');
-const client = redis.createClient();
+
+
 const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
 const path = require('path');
@@ -20,7 +20,16 @@ const CHANNEL_ID_3 =-1002208556196;
 const CHANNEL_ID_4 =-1002246870197; 
 
 
+const redis = require('redis');
+const client = redis.createClient();
 
+client.on('error', (err) => {
+  console.error('Ошибка подключения к Redis:', err);
+});
+
+client.on('connect', () => {
+  console.log('Подключение к Redis успешно!');
+});
 
 const userStates = {};
 
@@ -32,13 +41,7 @@ mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTop
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
 
-client.on('error', (err) => {
-  console.error('Ошибка подключения к Redis:', err);
-});
-    
-client.on('connect', () => {
-   console.log('Подключение к Redis успешно!');
-});
+
 
 const knownIds = [ 
     { id: 3226119, date: new Date('2013-11-29') },
