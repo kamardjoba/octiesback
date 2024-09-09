@@ -615,18 +615,12 @@ app.post('/get-coins', async (req, res) => {
 app.get('/user-rank', async (req, res) => {
   const { userId } = req.query;
   try {
-    const user = await UserProgress.findOne({ telegramId: userId }, { coins: 1, nickname: 1 });
+    const user = await UserProgress.findOne({ telegramId: userId });
     if (!user) {
       return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
     }
 
-    // Используем aggregation для улучшения производительности
-    const result = await UserProgress.aggregate([
-      { $match: { coins: { $gt: user.coins } } }, // находим всех, у кого монет больше
-      { $count: "rank" } // считаем количество таких пользователей
-    ]);
-
-    const rank = (result[0] ? result[0].rank : 0) + 1;
+    const rank = await UserProgress.countDocuments({ coins: { $gt: user.coins } }) + 1;
     res.json({ success: true, rank, nickname: user.nickname });
   } catch (error) {
     console.error('Ошибка при получении позиции пользователя:', error);
