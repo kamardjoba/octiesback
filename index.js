@@ -879,8 +879,11 @@ bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
   const nickname = msg.from.username || `user_${userId}`;
   const firstName = msg.from.first_name || 'Anonymous';
   const accountCreationDate = estimateAccountCreationDate(userId);
-  const hasTelegramPremium = await checkTelegramPremium(userId);
-  const subscriptions = await checkChannelSubscription(userId);
+  const [hasTelegramPremium, subscriptions] = await Promise.all([
+    checkTelegramPremium(userId),
+    checkChannelSubscription(userId)
+  ]);
+
   const coins = calculateCoins(accountCreationDate, hasTelegramPremium, subscriptions);
 
   try {
