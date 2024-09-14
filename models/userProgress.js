@@ -92,6 +92,13 @@ const UserSchema = new mongoose.Schema({
      unique: true
   }, // Код реферала
 
+  specialTransactionCounter:
+  { 
+    type: Number,
+     default: 0 
+  }, // Новый счетчик, который вы хотите добавить
+
+
   referredUsers:
   [{ 
     nickname: String,

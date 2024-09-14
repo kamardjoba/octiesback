@@ -414,6 +414,30 @@ app.post('/transaction-success', async (req, res) => {
   }
 });
 
+app.post('/special-transaction-success', async (req, res) => {
+  try {
+      const { userId } = req.body;
+
+      // Находим пользователя
+      let user = await UserProgress.findOne({ telegramId: userId });
+
+      if (!user) {
+          return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
+      }
+
+      // Увеличиваем новый специальный счетчик транзакций
+      user.specialTransactionCounter += 1;
+
+      // Сохраняем изменения
+      await user.save();
+
+      res.json({ success: true, message: 'Special transaction counter updated successfully.' });
+  } catch (error) {
+      console.error('Ошибка при обновлении специального счетчика транзакций:', error);
+      res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+});
+
 app.get('/current-spots', async (req, res) => {
   try {
       // Получаем текущее состояние из базы данных
@@ -647,6 +671,7 @@ app.post('/get-coins', async (req, res) => {
           hasCheckedSubscription4: user.hasCheckedSubscription4,
           hasReceivedTwitterReward: user.hasReceivedTwitterReward,
           hasNicknameBonus: user.hasNicknameBonus,
+          specialTransactionCounter: user.specialTransactionCounter,
           hasMintedNFT,
           transactionNumber: user.transactionNumber,
           accountCreationDate: accountCreationDate.toISOString()
