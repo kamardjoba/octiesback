@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
 const path = require('path');
 const UserProgress = require('./models/userProgress');
+const Spots = require('./models/Spots');
 //const GlobalTransactionCounter = require('./models/GlobalTransactionCounter');
 const axios = require('axios');
 const app = express();
@@ -18,6 +19,9 @@ const CHANNEL_ID = -1002234145528;
 const CHANNEL_ID_2 =-1002088709942;
 const CHANNEL_ID_3 =-1002208556196; 
 const CHANNEL_ID_4 =-1002246870197; 
+
+
+
 
 
 
@@ -381,6 +385,47 @@ app.post('/record-transaction', async (req, res) => {
   } catch (error) {
       console.error('Ошибка при записи транзакции:', error);
       res.status(500).json({ success: false, message: 'Ошибка при записи транзакции.' });
+  }
+});
+
+app.post('/transaction-success', async (req, res) => {
+  try {
+      // Получаем текущее состояние из базы данных
+      let spots = await Spots.findOne();
+      
+      // Если данных нет, создаем запись
+      if (!spots) {
+          spots = new Spots({ availableSpots: 250 });
+      }
+
+      // Уменьшаем количество свободных мест
+      if (spots.availableSpots > 0) {
+          spots.availableSpots -= 1;
+      }
+
+      // Сохраняем обновленное состояние в базу данных
+      await spots.save();
+
+      // Отправляем обновленное количество мест клиенту
+      res.json({ success: true, availableSpots: spots.availableSpots });
+  } catch (error) {
+      console.error('Ошибка при обновлении количества мест:', error);
+      res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+});
+
+app.get('/current-spots', async (req, res) => {
+  try {
+      // Получаем текущее состояние из базы данных
+      const spots = await Spots.findOne();
+
+      // Если данных нет, возвращаем значение по умолчанию
+      const availableSpots = spots ? spots.availableSpots : 250;
+
+      res.json({ success: true, availableSpots });
+  } catch (error) {
+      console.error('Ошибка при получении количества мест:', error);
+      res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
 
