@@ -418,17 +418,17 @@ app.post('/special-transaction-success', async (req, res) => {
   try {
       const { userId } = req.body;
 
-      // Находим пользователя
+     
       let user = await UserProgress.findOne({ telegramId: userId });
 
       if (!user) {
           return res.status(404).json({ success: false, message: 'Пользователь не найден.' });
       }
 
-      // Увеличиваем новый специальный счетчик транзакций
+      
       user.specialTransactionCounter += 1;
 
-      // Сохраняем изменения
+     
       await user.save();
 
       res.json({ success: true, message: 'Special transaction counter updated successfully.' });
@@ -594,6 +594,7 @@ app.post('/check-subscription-and-update', async (req, res) => {
                 hasCheckedSubscription2: user.hasCheckedSubscription2,
                 hasCheckedSubscription3: user.hasCheckedSubscription3,
                 hasCheckedSubscription4: user.hasCheckedSubscription4,
+                specialTransactionCounter: user.specialTransactionCounter,
                 hasNicknameBonus: user.hasNicknameBonus
             });
         } else {
