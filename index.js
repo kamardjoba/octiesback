@@ -20,12 +20,6 @@ const CHANNEL_ID_2 =-1002088709942;
 const CHANNEL_ID_3 =-1002208556196; 
 const CHANNEL_ID_4 =-1002246870197; 
 
-
-
-
-
-
-
 const userStates = {};
 
 app.use(cors());
@@ -277,9 +271,10 @@ const checkNicknameAndReward = async (userId) => {
             user.coins -= 300;
             user.hasNicknameBonus = false;
             console.log(`Пользователю ${user.firstName} снято 569 монет за удаление "octies" из ника.`);
-        } else {
-            console.log(`Нет изменений в нике или бонус уже был обработан.`);
-        }
+         }
+        // else {
+        //     console.log(`Нет изменений в нике или бонус уже был обработан.`);
+        // }
 
         // Сбрасываем флаг после завершения обработки
         user.processingNicknameBonus = false;
