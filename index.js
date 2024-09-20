@@ -857,67 +857,52 @@ app.post('/add-coins', async (req, res) => {
 //     bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
 // });
 
-async function sendMessageToAllUsers(message, buttonText, buttonUrl, buttonType) {
+async function sendMessageToAllUsers(message, buttonText1, buttonUrl1, buttonType1, buttonText2 = null, buttonUrl2 = null, buttonType2 = null) {
   try {
       const users = await UserProgress.find({}, 'telegramId');
 
       const promises = users.map(user => {
+          let replyMarkup = {};
 
-        const replyMarkup = buttons.length > 0 ? 
-        { inline_keyboard: [buttons] } : undefined;
-
-    if (message.text) {
-        // Отправка текстового сообщения
-        return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
-    } else if (message.photo) {
-        // Отправка фото
-        const photo = message.photo[message.photo.length - 1].file_id;
-        const caption = message.caption || '';
-        return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
-    } else if (message.video) {
-        // Отправка видео
-        const video = message.video.file_id;
-        const caption = message.caption || '';
-        return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
-    }
-
-          if (message.text) {
-              // Отправка текстового сообщения
-              if (buttonText && buttonUrl) {
-                  const replyMarkup = buttonType === 'web_app' ? 
-                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
-                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
-
-                  return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
+          // Проверяем, добавлены ли кнопки
+          if (buttonText1 && buttonUrl1) {
+              // Если вторая кнопка также передана, добавляем обе кнопки
+              if (buttonText2 && buttonUrl2) {
+                  replyMarkup = {
+                      inline_keyboard: [
+                          [
+                              buttonType1 === 'web_app' ? { text: buttonText1, web_app: { url: buttonUrl1 } } : { text: buttonText1, url: buttonUrl1 },
+                              buttonType2 === 'web_app' ? { text: buttonText2, web_app: { url: buttonUrl2 } } : { text: buttonText2, url: buttonUrl2 }
+                          ]
+                      ]
+                  };
               } else {
-                  return bot.sendMessage(user.telegramId, message.text);
+                  // Если передана только одна кнопка
+                  replyMarkup = {
+                      inline_keyboard: [
+                          [
+                              buttonType1 === 'web_app' ? { text: buttonText1, web_app: { url: buttonUrl1 } } : { text: buttonText1, url: buttonUrl1 }
+                          ]
+                      ]
+                  };
               }
-          } else if (message.photo) {
-              // Отправка фото
+          }
+
+          // Отправка текстового сообщения
+          if (message.text) {
+              return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
+          } 
+          // Отправка фото
+          else if (message.photo) {
               const photo = message.photo[message.photo.length - 1].file_id;
               const caption = message.caption || '';
-              if (buttonText && buttonUrl) {
-                  const replyMarkup = buttonType === 'web_app' ? 
-                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
-                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
-
-                  return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
-              } else {
-                  return bot.sendPhoto(user.telegramId, photo, { caption });
-              }
-          } else if (message.video) {
-              // Отправка видео
+              return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
+          } 
+          // Отправка видео
+          else if (message.video) {
               const video = message.video.file_id;
               const caption = message.caption || '';
-              if (buttonText && buttonUrl) {
-                  const replyMarkup = buttonType === 'web_app' ? 
-                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
-                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
-
-                  return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
-              } else {
-                  return bot.sendVideo(user.telegramId, video, { caption });
-              }
+              return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
           }
       });
 
@@ -930,99 +915,94 @@ async function sendMessageToAllUsers(message, buttonText, buttonUrl, buttonType)
 const ADMIN_IDS = [561009411]; // Замени на реальные Telegram ID администраторов
 
 bot.onText(/\/broadcast/, (msg) => {
-  const chatId = msg.chat.id;
-  const userId = msg.from.id;
-
-  if (!ADMIN_IDS.includes(userId)) {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+  
+    if (!ADMIN_IDS.includes(userId)) {
       return bot.sendMessage(chatId, 'У вас нет прав для использования этой команды.');
-  }
-
-  userStates[userId] = { state: 'awaiting_message' };
-  bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
+    }
+  
+    userStates[userId] = { state: 'awaiting_message' };
+    bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
 });
 
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const userId = msg.from.id;
-
-  if (userStates[userId] && userStates[userId].state === 'awaiting_message') {
-      userStates[userId].message = msg;
-      userStates[userId].state = 'awaiting_button_choice';
-      bot.sendMessage(chatId, 'Вы хотите добавить инлайн кнопку? Отправьте "1" для одной кнопки, "2" для двух кнопок или "нет" для продолжения без кнопок.');
-  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_choice') {
-      if (msg.text === '1') {
-          userStates[userId].state = 'awaiting_button_text';
-          userStates[userId].buttons = [];
-          bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для инлайн кнопки.');
-      } else if (msg.text === '2') {
-          userStates[userId].state = 'awaiting_button_text';
-          userStates[userId].buttons = [];
-          bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для первой инлайн кнопки.');
-      } else {
-          await sendMessageToAllUsers(userStates[userId].message, []);
-          delete userStates[userId];
-          bot.sendMessage(chatId, 'Сообщение успешно отправлено всем пользователям.');
-      }
-  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text') {
-      userStates[userId].buttons.push({ text: msg.text });
-      if (userStates[userId].buttons.length === 1) {
-          userStates[userId].state = 'awaiting_button_url';
-          bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для инлайн кнопки.');
-      } else if (userStates[userId].buttons.length === 2) {
-          userStates[userId].state = 'awaiting_button_url_2';
-          bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для второй инлайн кнопки.');
-      }
-  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url') {
-      userStates[userId].buttons[0].url = msg.text;
-      if (userStates[userId].buttons.length === 1) {
-          await sendMessageToAllUsers(userStates[userId].message, [userStates[userId].buttons[0]]);
-          delete userStates[userId];
-          bot.sendMessage(chatId, 'Сообщение с одной кнопкой успешно отправлено всем пользователям.');
-      } else {
-          userStates[userId].state = 'awaiting_button_url_2';
-          bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для второй инлайн кнопки.');
-      }
-  } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url_2') {
-      userStates[userId].buttons[1].url = msg.text;
-      await sendMessageToAllUsers(userStates[userId].message, [userStates[userId].buttons[0], userStates[userId].buttons[1]]);
-      delete userStates[userId];
-      bot.sendMessage(chatId, 'Сообщение с двумя кнопками успешно отправлено всем пользователям.');
-  }
-});
-  
-  
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
   
     if (userStates[userId] && userStates[userId].state === 'awaiting_message') {
-      userStates[userId].message = msg;
-      userStates[userId].state = 'awaiting_button_choice';
+        userStates[userId].message = msg;
+        userStates[userId].state = 'awaiting_button_choice';
   
-      bot.sendMessage(chatId, 'Вы хотите добавить инлайн кнопку? Отправьте "да" или "нет".');
-    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_choice') {
-      if (msg.text.toLowerCase() === 'да') {
-        userStates[userId].state = 'awaiting_button_text';
-        bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для инлайн кнопки.');
-      } else {
-        await sendMessageToAllUsers(userStates[userId].message);
+        bot.sendMessage(chatId, 'Вы хотите добавить инлайн кнопку? Отправьте "да" или "нет".');
+    } 
+    // Обработка выбора одной или двух кнопок
+    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_choice') {
+        if (msg.text.toLowerCase() === 'да') {
+            bot.sendMessage(chatId, 'Вы хотите одну или две кнопки? Отправьте "1" или "2".');
+            userStates[userId].state = 'awaiting_number_of_buttons';
+        } else {
+            await sendMessageToAllUsers(userStates[userId].message);
+            delete userStates[userId];
+            bot.sendMessage(chatId, 'Сообщение успешно отправлено всем пользователям.');
+        }
+    } 
+    // Выбор количества кнопок
+    else if (userStates[userId] && userStates[userId].state === 'awaiting_number_of_buttons') {
+        if (msg.text === '1') {
+            userStates[userId].state = 'awaiting_button_text1';
+            bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для первой кнопки.');
+        } else if (msg.text === '2') {
+            userStates[userId].state = 'awaiting_button_text1';
+            userStates[userId].expectTwoButtons = true;
+            bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для первой кнопки.');
+        }
+    } 
+    // Обработка первой кнопки
+    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text1') {
+        userStates[userId].buttonText1 = msg.text;
+        userStates[userId].state = 'awaiting_button_url1';
+        bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для первой кнопки.');
+    } 
+    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url1') {
+        userStates[userId].buttonUrl1 = msg.text;
+        userStates[userId].state = 'awaiting_button_type1';
+        bot.sendMessage(chatId, 'Какого типа будет первая кнопка? Отправьте "web_app" или "url".');
+    } 
+    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type1') {
+        userStates[userId].buttonType1 = msg.text.toLowerCase();
+
+        // Если пользователь хочет две кнопки
+        if (userStates[userId].expectTwoButtons) {
+            userStates[userId].state = 'awaiting_button_text2';
+            bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для второй кнопки.');
+        } else {
+            await sendMessageToAllUsers(userStates[userId].message, userStates[userId].buttonText1, userStates[userId].buttonUrl1, userStates[userId].buttonType1);
+            delete userStates[userId];
+            bot.sendMessage(chatId, 'Сообщение с одной кнопкой успешно отправлено всем пользователям.');
+        }
+    } 
+    // Обработка второй кнопки
+    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text2') {
+        userStates[userId].buttonText2 = msg.text;
+        userStates[userId].state = 'awaiting_button_url2';
+        bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для второй кнопки.');
+    } 
+    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url2') {
+        userStates[userId].buttonUrl2 = msg.text;
+        userStates[userId].state = 'awaiting_button_type2';
+        bot.sendMessage(chatId, 'Какого типа будет вторая кнопка? Отправьте "web_app" или "url".');
+    } 
+    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type2') {
+        userStates[userId].buttonType2 = msg.text.toLowerCase();
+
+        await sendMessageToAllUsers(
+            userStates[userId].message,
+            userStates[userId].buttonText1, userStates[userId].buttonUrl1, userStates[userId].buttonType1,
+            userStates[userId].buttonText2, userStates[userId].buttonUrl2, userStates[userId].buttonType2
+        );
         delete userStates[userId];
-        bot.sendMessage(chatId, 'Сообщение успешно отправлено всем пользователям.');
-      }
-    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text') {
-      userStates[userId].buttonText = msg.text;
-      userStates[userId].state = 'awaiting_button_url';
-      bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для инлайн кнопки.');
-    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url') {
-      userStates[userId].buttonUrl = msg.text;
-      userStates[userId].state = 'awaiting_button_type';
-      bot.sendMessage(chatId, 'Какого типа будет кнопка? Отправьте "web_app" или "url".');
-    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type') {
-      userStates[userId].buttonType = msg.text.toLowerCase();
-  
-      await sendMessageToAllUsers(userStates[userId].message, userStates[userId].buttonText, userStates[userId].buttonUrl, userStates[userId].buttonType);
-      delete userStates[userId];
-      bot.sendMessage(chatId, 'Сообщение с инлайн кнопкой успешно отправлено всем пользователям.');
+        bot.sendMessage(chatId, 'Сообщение с двумя кнопками успешно отправлено всем пользователям.');
     }
 });
   
