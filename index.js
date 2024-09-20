@@ -927,83 +927,84 @@ bot.onText(/\/broadcast/, (msg) => {
 });
 
 bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const userId = msg.from.id;
-  
-    if (userStates[userId] && userStates[userId].state === 'awaiting_message') {
-        userStates[userId].message = msg;
-        userStates[userId].state = 'awaiting_button_choice';
-  
-        bot.sendMessage(chatId, 'Вы хотите добавить инлайн кнопку? Отправьте "да" или "нет".');
-    } 
-    // Обработка выбора одной или двух кнопок
-    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_choice') {
-        if (msg.text.toLowerCase() === 'да') {
-            bot.sendMessage(chatId, 'Вы хотите одну или две кнопки? Отправьте "1" или "2".');
-            userStates[userId].state = 'awaiting_number_of_buttons';
-        } else {
-            await sendMessageToAllUsers(userStates[userId].message);
-            delete userStates[userId];
-            bot.sendMessage(chatId, 'Сообщение успешно отправлено всем пользователям.');
-        }
-    } 
-    // Выбор количества кнопок
-    else if (userStates[userId] && userStates[userId].state === 'awaiting_number_of_buttons') {
-        if (msg.text === '1') {
-            userStates[userId].state = 'awaiting_button_text1';
-            bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для первой кнопки.');
-        } else if (msg.text === '2') {
-            userStates[userId].state = 'awaiting_button_text1';
-            userStates[userId].expectTwoButtons = true;
-            bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для первой кнопки.');
-        }
-    } 
-    // Обработка первой кнопки
-    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text1') {
-        userStates[userId].buttonText1 = msg.text;
-        userStates[userId].state = 'awaiting_button_url1';
-        bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для первой кнопки.');
-    } 
-    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url1') {
-        userStates[userId].buttonUrl1 = msg.text;
-        userStates[userId].state = 'awaiting_button_type1';
-        bot.sendMessage(chatId, 'Какого типа будет первая кнопка? Отправьте "web_app" или "url".');
-    } 
-    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type1') {
-        userStates[userId].buttonType1 = msg.text.toLowerCase();
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
 
-        // Если пользователь хочет две кнопки
-        if (userStates[userId].expectTwoButtons) {
-            userStates[userId].state = 'awaiting_button_text2';
-            bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для второй кнопки.');
-        } else {
-            await sendMessageToAllUsers(userStates[userId].message, userStates[userId].buttonText1, userStates[userId].buttonUrl1, userStates[userId].buttonType1);
-            delete userStates[userId];
-            bot.sendMessage(chatId, 'Сообщение с одной кнопкой успешно отправлено всем пользователям.');
-        }
-    } 
-    // Обработка второй кнопки
-    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text2') {
-        userStates[userId].buttonText2 = msg.text;
-        userStates[userId].state = 'awaiting_button_url2';
-        bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для второй кнопки.');
-    } 
-    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url2') {
-        userStates[userId].buttonUrl2 = msg.text;
-        userStates[userId].state = 'awaiting_button_type2';
-        bot.sendMessage(chatId, 'Какого типа будет вторая кнопка? Отправьте "web_app" или "url".');
-    } 
-    else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type2') {
-        userStates[userId].buttonType2 = msg.text.toLowerCase();
+  // Проверяем, есть ли текст в сообщении
+  if (msg.text && typeof msg.text === 'string') {
+      if (userStates[userId] && userStates[userId].state === 'awaiting_message') {
+          userStates[userId].message = msg;
+          userStates[userId].state = 'awaiting_button_choice';
 
-        await sendMessageToAllUsers(
-            userStates[userId].message,
-            userStates[userId].buttonText1, userStates[userId].buttonUrl1, userStates[userId].buttonType1,
-            userStates[userId].buttonText2, userStates[userId].buttonUrl2, userStates[userId].buttonType2
-        );
-        delete userStates[userId];
-        bot.sendMessage(chatId, 'Сообщение с двумя кнопками успешно отправлено всем пользователям.');
-    }
+          bot.sendMessage(chatId, 'Вы хотите добавить инлайн кнопку? Отправьте "да" или "нет".');
+      } 
+      else if (userStates[userId] && userStates[userId].state === 'awaiting_button_choice') {
+          if (msg.text.toLowerCase() === 'да') {
+              bot.sendMessage(chatId, 'Вы хотите одну или две кнопки? Отправьте "1" или "2".');
+              userStates[userId].state = 'awaiting_number_of_buttons';
+          } else {
+              await sendMessageToAllUsers(userStates[userId].message);
+              delete userStates[userId];
+              bot.sendMessage(chatId, 'Сообщение успешно отправлено всем пользователям.');
+          }
+      } 
+      else if (userStates[userId] && userStates[userId].state === 'awaiting_number_of_buttons') {
+          if (msg.text === '1') {
+              userStates[userId].state = 'awaiting_button_text1';
+              bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для первой кнопки.');
+          } else if (msg.text === '2') {
+              userStates[userId].state = 'awaiting_button_text1';
+              userStates[userId].expectTwoButtons = true;
+              bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для первой кнопки.');
+          }
+      } 
+      else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text1') {
+          userStates[userId].buttonText1 = msg.text;
+          userStates[userId].state = 'awaiting_button_url1';
+          bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для первой кнопки.');
+      } 
+      else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url1') {
+          userStates[userId].buttonUrl1 = msg.text;
+          userStates[userId].state = 'awaiting_button_type1';
+          bot.sendMessage(chatId, 'Какого типа будет первая кнопка? Отправьте "web_app" или "url".');
+      } 
+      else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type1') {
+          userStates[userId].buttonType1 = msg.text.toLowerCase();
+
+          if (userStates[userId].expectTwoButtons) {
+              userStates[userId].state = 'awaiting_button_text2';
+              bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для второй кнопки.');
+          } else {
+              await sendMessageToAllUsers(userStates[userId].message, userStates[userId].buttonText1, userStates[userId].buttonUrl1, userStates[userId].buttonType1);
+              delete userStates[userId];
+              bot.sendMessage(chatId, 'Сообщение с одной кнопкой успешно отправлено всем пользователям.');
+          }
+      } 
+      else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text2') {
+          userStates[userId].buttonText2 = msg.text;
+          userStates[userId].state = 'awaiting_button_url2';
+          bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для второй кнопки.');
+      } 
+      else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url2') {
+          userStates[userId].buttonUrl2 = msg.text;
+          userStates[userId].state = 'awaiting_button_type2';
+          bot.sendMessage(chatId, 'Какого типа будет вторая кнопка? Отправьте "web_app" или "url".');
+      } 
+      else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type2') {
+          userStates[userId].buttonType2 = msg.text.toLowerCase();
+
+          await sendMessageToAllUsers(
+              userStates[userId].message,
+              userStates[userId].buttonText1, userStates[userId].buttonUrl1, userStates[userId].buttonType1,
+              userStates[userId].buttonText2, userStates[userId].buttonUrl2, userStates[userId].buttonType2
+          );
+          delete userStates[userId];
+          bot.sendMessage(chatId, 'Сообщение с двумя кнопками успешно отправлено всем пользователям.');
+      }
+  } else {
+      // Если сообщение не содержит текст, сообщаем пользователю
+      bot.sendMessage(chatId, 'Пожалуйста, отправьте текстовое сообщение.');
+  }
 });
   
 app.post('/save-wallet-address', async (req, res) => {
