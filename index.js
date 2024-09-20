@@ -748,98 +748,163 @@ app.post('/add-coins', async (req, res) => {
     }
 });
 
-// app.get('/get-user-data', async (req, res) => {
-//   const { userId } = req.query;
+// // app.get('/get-user-data', async (req, res) => {
+// //   const { userId } = req.query;
 
+// //   try {
+// //     const user = await UserProgress.findOne({ telegramId: userId });
+// //     if (!user) {
+// //       return res.status(404).json({ error: 'Пользователь не найден' });
+// //     }
+// //     res.json({
+// //       coins: user.coins,
+// //       telegramId: user.telegramId,
+// //       hasTelegramPremium: user.hasTelegramPremium,
+// //       hasCheckedSubscription: user.hasCheckedSubscription,
+// //       hasCheckedSubscription2: user.hasCheckedSubscription2
+// //     });
+// //   } catch (error) {
+// //     console.error('Ошибка при получении данных пользователя:', error);
+// //     res.status(500).json({ error: 'Ошибка сервера' });
+// //   }
+// // });
+// async function sendMessageToAllUsers(message, buttonText) {
 //   try {
-//     const user = await UserProgress.findOne({ telegramId: userId });
-//     if (!user) {
-//       return res.status(404).json({ error: 'Пользователь не найден' });
-//     }
-//     res.json({
-//       coins: user.coins,
-//       telegramId: user.telegramId,
-//       hasTelegramPremium: user.hasTelegramPremium,
-//       hasCheckedSubscription: user.hasCheckedSubscription,
-//       hasCheckedSubscription2: user.hasCheckedSubscription2
+//     const users = await UserProgress.find({}, 'telegramId');
+
+//     const promises = users.map(user => {
+//       if (message.text) {
+//         // Отправка текстового сообщения
+//         const replyMarkup = {
+//           inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
+//         };
+//         return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
+//       } else if (message.photo) {
+//         // Отправка фото
+//         const photo = message.photo[message.photo.length - 1].file_id;
+//         const caption = message.caption || '';
+//         const replyMarkup = {
+//           inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
+//         };
+//         return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
+//       } else if (message.video) {
+//         // Отправка видео
+//         const video = message.video.file_id;
+//         const caption = message.caption || '';
+//         const replyMarkup = {
+//           inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
+//         };
+//         return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
+//       }
 //     });
+
+//     await Promise.all(promises);
 //   } catch (error) {
-//     console.error('Ошибка при получении данных пользователя:', error);
-//     res.status(500).json({ error: 'Ошибка сервера' });
+//     console.error('Ошибка при отправке сообщений:', error);
 //   }
-// });
-async function sendMessageToAllUsers(message, buttonText) {
-  try {
-    const users = await UserProgress.find({}, 'telegramId');
+// }
 
-    const promises = users.map(user => {
-      if (message.text) {
-        // Отправка текстового сообщения
-        const replyMarkup = {
-          inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
-        };
-        return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
-      } else if (message.photo) {
-        // Отправка фото
-        const photo = message.photo[message.photo.length - 1].file_id;
-        const caption = message.caption || '';
-        const replyMarkup = {
-          inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
-        };
-        return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
-      } else if (message.video) {
-        // Отправка видео
-        const video = message.video.file_id;
-        const caption = message.caption || '';
-        const replyMarkup = {
-          inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
-        };
-        return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
-      }
-    });
+// bot.on('callback_query', async (callbackQuery) => {
+//   const message = callbackQuery.message;
+//   const userId = callbackQuery.from.id;
 
-    await Promise.all(promises);
-  } catch (error) {
-    console.error('Ошибка при отправке сообщений:', error);
-  }
-}
-
-bot.on('callback_query', async (callbackQuery) => {
-  const message = callbackQuery.message;
-  const userId = callbackQuery.from.id;
-
-  if (callbackQuery.data === 'start_command') {
+//   if (callbackQuery.data === 'start_command') {
    
     
-    // Вызовите функцию, которая отвечает за команду /start
-    handleStartCommand(userId, message.chat.id);
-  }
+//     // Вызовите функцию, которая отвечает за команду /start
+//     handleStartCommand(userId, message.chat.id);
+//   }
 
-  bot.answerCallbackQuery(callbackQuery.id);
-});
+//   bot.answerCallbackQuery(callbackQuery.id);
+// });
 
-async function handleStartCommand(userId, chatId) {
-  // Ваш код для обработки команды /start
-  const appUrl = `https://octies.org/?userId=${userId}`;
-  const channelUrl = `https://t.me/octies_community`;
+// async function handleStartCommand(userId, chatId) {
+//   // Ваш код для обработки команды /start
+//   const appUrl = `https://octies.org/?userId=${userId}`;
+//   const channelUrl = `https://t.me/octies_community`;
 
-  try {
-    const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
+//   try {
+//     const imagePath = path.join(__dirname, 'images', 'Octies_bot_logo.png');
     
-    await bot.sendPhoto(chatId, imagePath, {
-      caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙",
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: "Let's Go!", web_app: { url: appUrl } },
-            { text: 'Join OCTIES Community', url: channelUrl }
-          ]
-        ]
-      }
-    });
+//     await bot.sendPhoto(chatId, imagePath, {
+//       caption: "How cool is your Telegram profile? Check your rating and receive rewards 🐙",
+//       reply_markup: {
+//         inline_keyboard: [
+//           [
+//             { text: "Let's Go!", web_app: { url: appUrl } },
+//             { text: 'Join OCTIES Community', url: channelUrl }
+//           ]
+//         ]
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Ошибка при отправке фото:', error);
+//     bot.sendMessage(chatId, 'Произошла ошибка при отправке фото.');
+//   }
+// }
+
+// const ADMIN_IDS = [561009411]; // Замени на реальные Telegram ID администраторов
+
+// bot.onText(/\/broadcast/, (msg) => {
+//     const chatId = msg.chat.id;
+//     const userId = msg.from.id;
+  
+//     if (!ADMIN_IDS.includes(userId)) {
+//       return bot.sendMessage(chatId, 'У вас нет прав для использования этой команды.');
+//     }
+  
+//     userStates[userId] = { state: 'awaiting_message' };
+//     bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
+// });
+
+async function sendMessageToAllUsers(message, buttonText, buttonUrl, buttonType) {
+  try {
+      const users = await UserProgress.find({}, 'telegramId');
+
+      const promises = users.map(user => {
+          if (message.text) {
+              // Отправка текстового сообщения
+              if (buttonText && buttonUrl) {
+                  const replyMarkup = buttonType === 'web_app' ? 
+                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
+                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+
+                  return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
+              } else {
+                  return bot.sendMessage(user.telegramId, message.text);
+              }
+          } else if (message.photo) {
+              // Отправка фото
+              const photo = message.photo[message.photo.length - 1].file_id;
+              const caption = message.caption || '';
+              if (buttonText && buttonUrl) {
+                  const replyMarkup = buttonType === 'web_app' ? 
+                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
+                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+
+                  return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
+              } else {
+                  return bot.sendPhoto(user.telegramId, photo, { caption });
+              }
+          } else if (message.video) {
+              // Отправка видео
+              const video = message.video.file_id;
+              const caption = message.caption || '';
+              if (buttonText && buttonUrl) {
+                  const replyMarkup = buttonType === 'web_app' ? 
+                      { inline_keyboard: [[{ text: buttonText, web_app: { url: buttonUrl } }]] } : 
+                      { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+
+                  return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
+              } else {
+                  return bot.sendVideo(user.telegramId, video, { caption });
+              }
+          }
+      });
+
+      await Promise.all(promises);
   } catch (error) {
-    console.error('Ошибка при отправке фото:', error);
-    bot.sendMessage(chatId, 'Произошла ошибка при отправке фото.');
+      console.error('Ошибка при отправке сообщений:', error);
   }
 }
 
@@ -855,7 +920,45 @@ bot.onText(/\/broadcast/, (msg) => {
   
     userStates[userId] = { state: 'awaiting_message' };
     bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
-});
+  });
+  
+
+  bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+  
+    if (userStates[userId] && userStates[userId].state === 'awaiting_message') {
+      userStates[userId].message = msg;
+      userStates[userId].state = 'awaiting_button_choice';
+  
+      bot.sendMessage(chatId, 'Вы хотите добавить инлайн кнопку? Отправьте "да" или "нет".');
+    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_choice') {
+      if (msg.text.toLowerCase() === 'да') {
+        userStates[userId].state = 'awaiting_button_text';
+        bot.sendMessage(chatId, 'Пожалуйста, отправьте текст для инлайн кнопки.');
+      } else {
+        await sendMessageToAllUsers(userStates[userId].message);
+        delete userStates[userId];
+        bot.sendMessage(chatId, 'Сообщение успешно отправлено всем пользователям.');
+      }
+    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_text') {
+      userStates[userId].buttonText = msg.text;
+      userStates[userId].state = 'awaiting_button_url';
+      bot.sendMessage(chatId, 'Пожалуйста, отправьте URL для инлайн кнопки.');
+    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_url') {
+      userStates[userId].buttonUrl = msg.text;
+      userStates[userId].state = 'awaiting_button_type';
+      bot.sendMessage(chatId, 'Какого типа будет кнопка? Отправьте "web_app" или "url".');
+    } else if (userStates[userId] && userStates[userId].state === 'awaiting_button_type') {
+      userStates[userId].buttonType = msg.text.toLowerCase();
+  
+      await sendMessageToAllUsers(userStates[userId].message, userStates[userId].buttonText, userStates[userId].buttonUrl, userStates[userId].buttonType);
+      delete userStates[userId];
+      bot.sendMessage(chatId, 'Сообщение с инлайн кнопкой успешно отправлено всем пользователям.');
+    }
+  });
+  
+  
   
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
