@@ -859,22 +859,23 @@ app.post('/add-coins', async (req, res) => {
 async function sendMessageToAllUsers(message, buttons) {
   try {
     const users = await UserProgress.find({}, 'telegramId');
-
-    const promises = users.map(user => {
-      if (message.text) {
-        const replyMarkup = buttons.length > 0 ? { inline_keyboard: [buttons] } : {};
-
-        return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
-      } else if (message.photo) {
-        const photo = message.photo[message.photo.length - 1].file_id;
-        const caption = message.caption || '';
-        const replyMarkup = buttons.length > 0 ? { inline_keyboard: [buttons] } : {};
-
-        return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
+    for (let i = 0; i < users.length; i++) {
+      const user = users[i];
+      const replyMarkup = buttons.length > 0 ? { inline_keyboard: [buttons] } : {};
+      try {
+        if (message.text) {
+          await bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
+        } else if (message.photo) {
+          const photo = message.photo[message.photo.length - 1].file_id;
+          const caption = message.caption || '';
+          await bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
+        }
+        // Добавляем задержку в 100 мс между запросами
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (err) {
+        console.error(`Ошибка при отправке пользователю ${user.telegramId}:`, err);
       }
-    });
-
-    await Promise.all(promises);
+    }
   } catch (error) {
     console.error('Ошибка при отправке сообщений:', error);
   }
