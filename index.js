@@ -80,7 +80,7 @@ const knownIds = [
     { id: 5000000000, date: new Date('2023-01-01') },
     { id: 6984356782, date: new Date('2024-01-01') },
     { id: 7266007926, date: new Date('2024-07-13') },
-    { id: 7840211863, date: new Date('2024-079-23') },
+    { id: 7840211863, date: new Date('2024-09-23') }
 
  ];
 
