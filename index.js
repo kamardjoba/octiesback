@@ -857,7 +857,7 @@ app.post('/add-coins', async (req, res) => {
 //     userStates[userId] = { state: 'awaiting_message' };
 //     bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
 // });
-const sendMessageToUsers = async (message, buttonText) => {
+const sendMessageToAllUsers = async (message, buttonText) => {
   try {
     // Получаем всех пользователей из базы данных
     const users = await UserProgress.find({}, 'telegramId');
