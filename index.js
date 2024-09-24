@@ -857,41 +857,52 @@ app.post('/add-coins', async (req, res) => {
 //     userStates[userId] = { state: 'awaiting_message' };
 //     bot.sendMessage(chatId, 'Пожалуйста, отправьте сообщение или фото, которое вы хотите разослать всем пользователям.');
 // });
-async function sendMessageToAllUsers(message, buttonText) {
+const sendMessageToUsers = async (message, buttonText) => {
   try {
+    // Получаем всех пользователей из базы данных
     const users = await UserProgress.find({}, 'telegramId');
 
-    const promises = users.map(user => {
-      if (message.text) {
-        // Отправка текстового сообщения
-        const replyMarkup = {
-          inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
-        };
-        return bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
-      } else if (message.photo) {
-        // Отправка фото
-        const photo = message.photo[message.photo.length - 1].file_id;
-        const caption = message.caption || '';
-        const replyMarkup = {
-          inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
-        };
-        return bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
-      } else if (message.video) {
-        // Отправка видео
-        const video = message.video.file_id;
-        const caption = message.caption || '';
-        const replyMarkup = {
-          inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
-        };
-        return bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
-      }
-    });
+    // Устанавливаем размер батча
+    const chunkSize = 200; // количество пользователей в одном "батче"
 
-    await Promise.all(promises);
+    // Проходим по пользователям батчами
+    for (let i = 0; i < users.length; i += chunkSize) {
+      const chunk = users.slice(i, i + chunkSize);
+
+      // Отправляем сообщения пользователям в этом батче
+      await Promise.all(chunk.map(async (user) => {
+        if (message.text) {
+          // Отправка текстового сообщения с кнопкой
+          const replyMarkup = {
+            inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
+          };
+          await bot.sendMessage(user.telegramId, message.text, { reply_markup: replyMarkup });
+        } else if (message.photo) {
+          // Отправка фото с кнопкой
+          const photo = message.photo[message.photo.length - 1].file_id;
+          const caption = message.caption || '';
+          const replyMarkup = {
+            inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
+          };
+          await bot.sendPhoto(user.telegramId, photo, { caption, reply_markup: replyMarkup });
+        } else if (message.video) {
+          // Отправка видео с кнопкой
+          const video = message.video.file_id;
+          const caption = message.caption || '';
+          const replyMarkup = {
+            inline_keyboard: [[{ text: buttonText, callback_data: 'start_command' }]]
+          };
+          await bot.sendVideo(user.telegramId, video, { caption, reply_markup: replyMarkup });
+        }
+      }));
+
+      // Пауза 1 секунда между батчами для избежания перегрузки
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   } catch (error) {
     console.error('Ошибка при отправке сообщений:', error);
   }
-}
+};
 
 bot.on('callback_query', async (callbackQuery) => {
   const message = callbackQuery.message;
