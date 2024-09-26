@@ -76,6 +76,13 @@ const UserSchema = new mongoose.Schema({
     
   },
 
+  hasBotSub:
+  {
+     type: Boolean, 
+     default: false
+    
+  },
+
   hasMintedNFT: {
     type: Boolean,
     default: false
