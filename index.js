@@ -533,7 +533,7 @@ app.post('/update-coins-bot', async (req, res) => {
           user.coins += amount;
 
           // Установите флаг hasReceivedTwitterReward в true, если пользователь получил награду
-          if (amount === 700) {
+          if (amount === 750) {
               user.hasBotSub = true;
           }
 
