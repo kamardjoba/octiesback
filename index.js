@@ -507,6 +507,7 @@ app.post('/update-coins', async (req, res) => {
       let user = await UserProgress.findOne({ telegramId: userId });
       if (user) {
           user.coins += amount;
+          user.coinsSub += amount;
 
           // Установите флаг hasReceivedTwitterReward в true, если пользователь получил награду
           if (amount === 500) {
