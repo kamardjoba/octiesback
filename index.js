@@ -616,6 +616,7 @@ app.post('/check-subscription-and-update', async (req, res) => {
                 hasCheckedSubscription3: user.hasCheckedSubscription3,
                 hasCheckedSubscription4: user.hasCheckedSubscription4,
                 specialTransactionCounter: user.specialTransactionCounter,
+
                 hasNicknameBonus: user.hasNicknameBonus
             });
         } else {
@@ -662,7 +663,9 @@ app.post('/get-coins', async (req, res) => {
               hasCheckedSubscription: subscriptions.isSubscribedToChannel1,
               hasCheckedSubscription2: subscriptions.isSubscribedToChannel2,
               hasCheckedSubscription3: subscriptions.isSubscribedToChannel3,
-              hasCheckedSubscription4: subscriptions.isSubscribedToChannel4
+              hasCheckedSubscription4: subscriptions.isSubscribedToChannel4,
+              hasReceivedTwitterReward: user.hasReceivedTwitterReward,
+              hasBotSub: user.hasBotSub
           });
           await user.save();
       }
